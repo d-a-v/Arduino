@@ -3,16 +3,16 @@
 
 #include "c_types.h"
 
-struct ip_addr {
+struct ip_addr_v4 {
     uint32 addr;
 };
 
-typedef struct ip_addr ip_addr_t;
+typedef struct ip_addr_v4 ip_addr_v4_t;
 
 struct ip_info {
-    struct ip_addr ip;
-    struct ip_addr netmask;
-    struct ip_addr gw;
+    struct ip_addr_v4 ip;
+    struct ip_addr_v4 netmask;
+    struct ip_addr_v4 gw;
 };
 
 /**
@@ -23,7 +23,7 @@ struct ip_info {
  * @arg mask network identifier mask
  * @return !0 if the network identifiers of both address match
  */
-#define ip_addr_netcmp(addr1, addr2, mask) (((addr1)->addr & \
+#define ip_addr_v4_netcmp(addr1, addr2, mask) (((addr1)->addr & \
         (mask)->addr) == \
         ((addr2)->addr & \
          (mask)->addr))

@@ -231,13 +231,17 @@ bool ESP8266WiFiSTAClass::config(IPAddress local_ip, IPAddress gateway, IPAddres
 
     if(dns1 != (uint32_t)0x00000000) {
         // Set DNS1-Server
-        d.addr = static_cast<uint32_t>(dns1);
+        IP_SET_TYPE_VAL(d, IPADDR_TYPE_V4);
+        ip_2_ip4(&d)->addr = static_cast<uint32_t>(dns1);
+        //d.addr = static_cast<uint32_t>(dns1);
         dns_setserver(0, &d);
     }
 
     if(dns2 != (uint32_t)0x00000000) {
         // Set DNS2-Server
-        d.addr = static_cast<uint32_t>(dns2);
+        IP_SET_TYPE_VAL(d, IPADDR_TYPE_V4);
+        ip_2_ip4(&d)->addr = static_cast<uint32_t>(dns2);
+        //d.addr = static_cast<uint32_t>(dns2);
         dns_setserver(1, &d);
     }
 

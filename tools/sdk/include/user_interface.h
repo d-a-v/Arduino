@@ -7,12 +7,7 @@
 #define __USER_INTERFACE_H__
 
 #include "os_type.h"
-#ifdef LWIP_OPEN_SRC
-#include "lwip/ip_addr.h"
-#else
-#include "ip_addr.h"
-#endif
-
+#include "ip_addr_v4.h"
 #include "queue.h"
 #include "user_config.h"
 #include "spi_flash.h"
@@ -283,13 +278,13 @@ bool wifi_softap_set_config_current(struct softap_config *config);
 struct station_info {
 	struct station_info* next;
 	uint8 bssid[6];
-	struct ip_addr ip;
+	struct ip_addr_v4 ip;
 };
 
 struct dhcps_lease {
 	bool enable;
-	struct ip_addr start_ip;
-	struct ip_addr end_ip;
+	struct ip_addr_v4 start_ip;
+	struct ip_addr_v4 end_ip;
 };
 
 enum dhcps_offer_option{
@@ -433,9 +428,9 @@ typedef struct {
 } Event_StaMode_AuthMode_Change_t;
 
 typedef struct {
-	struct ip_addr ip;
-	struct ip_addr mask;
-	struct ip_addr gw;
+	struct ip_addr_v4 ip;
+	struct ip_addr_v4 mask;
+	struct ip_addr_v4 gw;
 } Event_StaMode_Got_IP_t;
 
 typedef struct {
