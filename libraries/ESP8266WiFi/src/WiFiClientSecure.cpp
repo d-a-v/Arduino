@@ -72,8 +72,6 @@ public:
         if (_ssl_ctx_refcnt == 0) {
             ssl_ctx_free(_ssl_ctx);
         }
-
-        s_io_ctx = nullptr;
     }
 
     void ref()
@@ -96,14 +94,14 @@ public:
         if (_ssl) {
             /* Creating a new TLS session on top of a new TCP connection.
                ssl_free will want to send a close notify alert, but the old TCP connection
-               is already gone at this point, so reset s_io_ctx. */
-            s_io_ctx = nullptr;
+               is already gone at this point, so reset io_ctx. */
+            io_ctx = nullptr;
             ssl_free(_ssl);
             _available = 0;
             _read_ptr = nullptr;
         }
-        s_io_ctx = ctx;
-        _ssl = ssl_client_new(_ssl_ctx, 0, nullptr, 0, ext);
+        io_ctx = ctx;
+        _ssl = ssl_client_new(_ssl_ctx, reinterpret_cast<int>(this), nullptr, 0, ext);
         uint32_t t = millis();
 
         while (millis() - t < timeout_ms && ssl_handshake_status(_ssl) != SSL_OK) {
@@ -116,8 +114,8 @@ public:
     }
 
     void connectServer(ClientContext *ctx) {
-        s_io_ctx = ctx;
-	_ssl = ssl_server_new(_ssl_ctx, 0);
+        io_ctx = ctx;
+	_ssl = ssl_server_new(_ssl_ctx, reinterpret_cast<int>(this));
         _isServer = true;
 
 	int timeout_ms = 5000;
@@ -134,7 +132,7 @@ public:
 
     void stop()
     {
-        s_io_ctx = nullptr;
+        io_ctx = nullptr;
     }
 
     bool connected()
@@ -244,8 +242,7 @@ public:
 
     static ClientContext* getIOContext(int fd)
     {
-        (void) fd;
-        return s_io_ctx;
+        return reinterpret_cast<SSLContext*>(fd)->io_ctx;
     }
 
     int loadServerX509Cert(const uint8_t *cert, int len) {
@@ -287,12 +284,11 @@ protected:
     int _refcnt = 0;
     const uint8_t* _read_ptr = nullptr;
     size_t _available = 0;
-    static ClientContext* s_io_ctx;
+    ClientContext* io_ctx;
 };
 
 SSL_CTX* SSLContext::_ssl_ctx = nullptr;
 int SSLContext::_ssl_ctx_refcnt = 0;
-ClientContext* SSLContext::s_io_ctx = nullptr;
 
 WiFiClientSecure::WiFiClientSecure()
 {
