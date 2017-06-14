@@ -47,6 +47,7 @@ enum HTTPClientStatus { HC_NONE, HC_WAIT_READ, HC_WAIT_CLOSE };
 #define CONTENT_LENGTH_NOT_SET ((size_t) -2)
 
 class ESP8266WebServer;
+class ESP8266WebServerSecure;
 
 typedef struct {
   HTTPUploadStatus status;
@@ -66,15 +67,17 @@ class FS;
 
 class ESP8266WebServer
 {
+  friend class ESP8266WebServerSecure; // HTTPS server needs access to privates
+
 public:
   ESP8266WebServer(IPAddress addr, int port = 80);
   ESP8266WebServer(int port = 80);
   ~ESP8266WebServer();
 
-  void begin();
-  void handleClient();
+  virtual void begin();
+  virtual void handleClient();
 
-  void close();
+  virtual void close();
   void stop();
 
   bool authenticate(const char * username, const char * password);
@@ -91,7 +94,7 @@ public:
 
   String uri() { return _currentUri; }
   HTTPMethod method() { return _currentMethod; }
-  WiFiClient client() { return _currentClient; }
+  virtual WiFiClient client() { return _currentClient; }
   HTTPUpload& upload() { return _currentUpload; }
 
   String arg(String name);        // get request argument value by name
@@ -136,6 +139,10 @@ template<typename T> size_t streamFile(T &file, const String& contentType){
   send(200, contentType, "");
   return _currentClient.write(file);
 }
+
+private:
+  virtual size_t _currentClientWrite(const char* b, size_t l) { return _currentClient.write( b, l ); }
+  virtual size_t _currentClientWrite_P(PGM_P b, size_t l) { return _currentClient.write( b, l ); }
 
 protected:
   void _addRequestHandler(RequestHandler* handler);

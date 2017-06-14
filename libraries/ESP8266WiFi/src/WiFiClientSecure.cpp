@@ -414,6 +414,14 @@ size_t WiFiClientSecure::write(const uint8_t *buf, size_t size)
     return 0;
 }
 
+size_t WiFiClientSecure::write_P(PGM_P buf, size_t size)
+{
+    // Copy to RAM and call normal send. alloca() auto-frees on return
+    uint8_t *copy = (uint8_t*)alloca(size);
+    memcpy_P(copy, buf, size);
+    return write(copy, size);
+}
+
 int WiFiClientSecure::read(uint8_t *buf, size_t size)
 {
     if (!_ssl) {
@@ -502,6 +510,8 @@ void WiFiClientSecure::stop()
 {
     if (_ssl) {
         _ssl->stop();
+        _ssl->unref();
+        _ssl = nullptr;
     }
     WiFiClient::stop();
 }
