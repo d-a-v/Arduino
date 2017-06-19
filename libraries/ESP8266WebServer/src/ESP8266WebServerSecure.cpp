@@ -38,12 +38,12 @@ ESP8266WebServerSecure::ESP8266WebServerSecure(int port) : _serverSecure(port)
 
 void ESP8266WebServerSecure::setServerKeyAndCert_P(const uint8_t *key, int keyLen, const uint8_t *cert, int certLen)
 {
-    setServerKeyAndCert_P(key, keyLen, cert, certLen);
+    _serverSecure.setServerKeyAndCert_P(key, keyLen, cert, certLen);
 }
 
 void ESP8266WebServerSecure::setServerKeyAndCert(const uint8_t *key, int keyLen, const uint8_t *cert, int certLen)
 {
-    setServerKeyAndCert(key, keyLen, cert, certLen);
+    _serverSecure.setServerKeyAndCert(key, keyLen, cert, certLen);
 }
 
 ESP8266WebServerSecure::~ESP8266WebServerSecure() {
