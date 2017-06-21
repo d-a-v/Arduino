@@ -37,7 +37,7 @@ public:
   void setServerKeyAndCert_P(const uint8_t *key, int keyLen, const uint8_t *cert, int certLen);
   void setServerKeyAndCert(const uint8_t *key, int keyLen, const uint8_t *cert, int certLen);
 
-  WiFiClient client() override { Serial.println("ESP8266WebServerSecure::client()"); return _currentClientSecure; }
+  WiFiClient client() override { return _currentClientSecure; }
 
   void begin() override;
   void handleClient() override;
