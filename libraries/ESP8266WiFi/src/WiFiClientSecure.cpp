@@ -118,7 +118,7 @@ public:
 	_ssl = ssl_server_new(_ssl_ctx, reinterpret_cast<int>(this));
         _isServer = true;
 
-	int timeout_ms = 5000;
+	uint32_t timeout_ms = 5000;
         uint32_t t = millis();
 
         while (millis() - t < timeout_ms && ssl_handshake_status(_ssl) != SSL_OK) {
