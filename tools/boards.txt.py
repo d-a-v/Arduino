@@ -605,7 +605,14 @@ def all_flash_size ():
 	f4m.update( flash_size(  '4M', '4M3M',    'eagle.flash.4m.ld',        '3M SPIFFS', 1044464, 0x100000,  0x2FB000, 8192))
 	f8m =       flash_size(  '8M', '8M7M',    'eagle.flash.8m.ld',        '7M SPIFFS', 1044464, 0x100000,  0x6FB000, 8192)
 	f16m =      flash_size( '16M', '16M15M',  'eagle.flash.16m.ld',      '15M SPIFFS', 1044464, 0x100000, 0x16FB000, 8192)
-	return { '512K': f512, '1M': f1m, '2M': f2m, '4M': f4m, '8M': f8m, '16M': f16m }
+	return {
+		'512K': f512,
+		  '1M':  f1m,
+		  '2M':  f2m,
+		  '4M':  f4m,
+		  '8M':  f8m,
+		 '16M': f16m
+		}
 
 macros.update(all_flash_size())
 macros.update(all_debug())
@@ -646,7 +653,7 @@ for board in boards:
 	macrolist += [ 'debug_menu' ]
 	for block in macrolist:
 		for key in macros[block]:
-			if not ('opts' in board) or not (str(key) in board['opts']):
+			if not ('opts' in board) or not (key in board['opts']):
 				print short + key + '=' + macros[block][key]
 
 	# serial speed					
