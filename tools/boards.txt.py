@@ -638,13 +638,13 @@ print ''
 
 for board in boards:
 	print '##############################################################'
-	short=board['short']
+	short = board['short']
 	print short + '.name=' + board['name']
 
 	# standalone options
 	if 'opts' in board:
-		for opt in board['opts']:
-			print short + opt + '=' + board['opts'][opt]
+		for key in board['opts']:
+			print short + key + '=' + board['opts'][key]
 	
 	# macros
 	macrolist = [ 'defaults', 'cpufreq_menu', ]
@@ -659,7 +659,7 @@ for board in boards:
 	# serial speed					
 	for uspeed in uploadspeed:
 		for os in uspeed['os']:
-			speed=uspeed['speed']
+			speed = uspeed['speed']
 			print short + '.menu.UploadSpeed.' + str(speed) + os + '=' + str(speed)
 			print short + '.menu.UploadSpeed.' + str(speed) + os + '.upload.speed=' + str(speed)
 	
