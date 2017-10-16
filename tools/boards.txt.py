@@ -14,10 +14,10 @@
 # it.
 
 # board descriptor:
-#     short    short name
-#    name    display name
+#    short    short name
+#    name     display name
 #    opts:    specific entries dicts (overrides same entry in macros)
-#    macro:    common entries
+#    macro:   common entries
 #        unmodifiable parameters:
 #            resetmethod_ck/_nodemcu:    fixed reset method
 #            flashmode_qio/_dio/_qout/_dout:    fixed flash mode
@@ -31,9 +31,8 @@
 
 import collections
 
-boards = [
-    {
-        'short': 'generic',
+boards = collections.OrderedDict([
+    ( 'generic', {
         'name': 'Generic ESP8266 Module',
         'opts': {
             '.build.board': 'ESP8266_GENERIC',
@@ -46,9 +45,8 @@ boards = [
             '512K', '1M', '2M', '4M', '8M', '16M',
             'lwip',
             ],
-    },
-    {
-        'short': 'esp8285',
+    }),
+    ( 'esp8285', {
         'name': 'Generic ESP8285 Module',
         'opts': {
             '.build.board': 'ESP8266_ESP01',
@@ -60,9 +58,8 @@ boards = [
             'flashfreq_40',
             '1M',
             ],
-    },
-    {
-        'short': 'espduino',
+    }),
+    ( 'espduino', {
         'name': 'ESPDuino (ESP-13 Module)',
         'opts': {
             '.build.board': 'ESP8266_ESP13',
@@ -74,9 +71,8 @@ boards = [
             'flashfreq_40',
             '4M',
             ],
-    },
-    {
-        'short': 'huzzah',
+    }),
+    ( 'huzzah', {
         'name': 'Adafruit HUZZAH ESP8266',
         'opts': {
             '.build.board': 'ESP8266_ESP12',
@@ -88,9 +84,8 @@ boards = [
             'flashfreq_40',
             '4M',
             ],
-    },
-    {
-        'short': 'espresso_lite_v1',
+    }),
+    ( 'espresso_lite_v1', {
         'name': 'ESPresso Lite 1.0',
         'opts': {
             '.build.board': 'ESP8266_ESPRESSO_LITE_V1',
@@ -102,9 +97,8 @@ boards = [
             '4M',
             'resetmethod_menu',
             ],
-    },
-    {
-        'short': 'espresso_lite_v2',
+    }),
+    ( 'espresso_lite_v2', {
         'name': 'ESPresso Lite 2.0',
         'opts': {
             '.build.board': 'ESP8266_ESPRESSO_LITE_V2',
@@ -116,9 +110,8 @@ boards = [
             '4M',
             'resetmethod_menu',
             ],
-    },
-    {
-        'short': 'phoenix_v1',
+    }),
+    ( 'phoenix_v1', {
         'name': 'Phoenix 1.0',
         'opts': {
             '.build.board': 'ESP8266_PHOENIX_V1',
@@ -130,9 +123,8 @@ boards = [
             '4M',
             'resetmethod_menu',
             ],
-    },
-    {
-        'short': 'phoenix_v2',
+    }),
+    ( 'phoenix_v2', {
         'name': 'Phoenix 2.0',
         'opts': {
             '.build.board': 'ESP8266_PHOENIX_V2',
@@ -144,9 +136,8 @@ boards = [
             '4M',
             'resetmethod_menu',
             ],
-    },
-    {
-        'short': 'nodemcu',
+    }),
+    ( 'nodemcu', {
         'name': 'NodeMCU 0.9 (ESP-12 Module)',
         'opts': {
             '.build.board': 'ESP8266_NODEMCU',
@@ -158,9 +149,8 @@ boards = [
             'flashfreq_40',
             '4M',
             ],
-    },
-    {
-        'short': 'nodemcuv2',
+    }),
+    ( 'nodemcuv2', {
         'name': 'NodeMCU 1.0 (ESP-12E Module)',
         'opts': {
             '.build.board': 'ESP8266_NODEMCU',
@@ -172,9 +162,8 @@ boards = [
             'flashfreq_40',
             '4M',
             ],
-    },
-    {
-        'short': 'modwifi',
+    }),
+    ( 'modwifi', {
         'name': 'Olimex MOD-WIFI-ESP8266(-DEV)',
         'opts': {
             '.build.board': 'MOD_WIFI_ESP8266',
@@ -185,9 +174,8 @@ boards = [
             'flashfreq_40',
             '2M',
             ],
-    },
-    {
-        'short': 'thing',
+    }),
+    ( 'thing', {
         'name': 'SparkFun ESP8266 Thing',
         'opts': {
             '.build.board': 'ESP8266_THING',
@@ -199,9 +187,8 @@ boards = [
             'flashfreq_40',
             '512K',
             ],
-    },
-    {
-        'short': 'thingdev',
+    }),
+    ( 'thingdev', {
         'name': 'SparkFun ESP8266 Thing Dev',
         'opts': {
             '.build.board': 'ESP8266_THING_DEV',
@@ -213,9 +200,8 @@ boards = [
             'flashfreq_40',
             '512K',
             ],
-    },
-    {
-        'short': 'esp210',
+    }),
+    ( 'esp210', {
         'name': 'SweetPea ESP-210',
         'opts': {
             '.build.board': 'ESP8266_ESP210',
@@ -226,9 +212,8 @@ boards = [
             'flashfreq_40',
             '4M',
             ],
-    },
-    {
-        'short': 'd1_mini',
+    }),
+    ( 'd1_mini', {
         'name': 'WeMos D1 R2 & mini',
         'opts': {
             '.build.board': 'ESP8266_WEMOS_D1R2MINI',
@@ -240,9 +225,8 @@ boards = [
             'flashfreq_40',
             '4M',
             ],
-    },
-    {
-        'short': 'd1_mini_lite',
+    }),
+    ( 'd1_mini_lite', {
         'name': 'Wemos D1 mini lite',
         'opts': {
             '.build.board': 'ESP8266_WEMOS_D1MINILITE',
@@ -254,9 +238,8 @@ boards = [
             'flashfreq_40',
             '1M',
             ],
-    },
-    {
-        'short': 'd1',
+    }),
+    ( 'd1', {
         'name': 'WeMos D1 R1',
         'opts': {
             '.build.board': 'ESP8266_WEMOS_D1R1',
@@ -268,9 +251,8 @@ boards = [
             'flashfreq_40',
             '4M',
             ],
-    },
-    {
-        'short': 'espino',
+    }),
+    ( 'espino', {
         'name': 'ESPino (ESP-12 Module)',
         'opts': {
             '.build.board': 'ESP8266_ESP12',
@@ -282,9 +264,8 @@ boards = [
             'flashfreq_40',
             '4M',
             ]
-    },
-    {
-        'short': 'espinotee',
+    }),
+    ( 'espinotee', {
         'name': 'ThaiEasyElec\'s ESPino',
         'opts': {
             '.build.board': 'ESP8266_ESP13',
@@ -296,9 +277,8 @@ boards = [
             'flashfreq_40',
             '4M',
             ],
-    },
-    {
-        'short': 'wifinfo',
+    }),
+    ( 'wifinfo', {
         'name': 'WifInfo',
         'opts': {
             '.build.board': 'WIFINFO',
@@ -326,9 +306,8 @@ boards = [
             'flashfreq_menu',
             '1M',
             ]
-    },
-    {
-        'short': 'arduino-esp8266',
+    }),
+    ( 'arduino-esp8266', {
         'name': 'Arduino',
         'opts': {
             '.build.board': 'ESP8266_ARDUINO',
@@ -350,9 +329,8 @@ boards = [
             'flashfreq_40',
             '4M',
             ],
-    },
-    {
-        'short': 'gen4iod',
+    }),
+    ( 'gen4iod', {
         'name': '4D Systems gen4 IoD Range',
         'opts': {
             '.build.board': 'GEN4_IOD',
@@ -364,9 +342,8 @@ boards = [
             'flashfreq_80',
             '512K',
             ],
-    },
-    {
-        'short': 'oak',
+    }),
+    ( 'oak', {
         'name': 'DigiStump Oak',
         'opts': {
             '.build.board': 'ESP8266_OAK',
@@ -378,8 +355,8 @@ boards = [
             'flashfreq_40',
             '4M',
             ],
-    },
-    ]
+    }),
+    ])
 
 ################################################################
 
@@ -636,15 +613,15 @@ print 'menu.LwIPVariant=lwIP Variant'
 print 'menu.lwIP=lwIP Build'
 print ''
 
-for board in boards:
+for id in boards:
     print '##############################################################'
-    short = board['short']
-    print short + '.name=' + board['name']
+    board = boards[id]
+    print id + '.name=' + board['name']
 
     # standalone options
     if 'opts' in board:
-        for key in board['opts']:
-            print short + key + '=' + board['opts'][key]
+        for optname in board['opts']:
+            print id + optname + '=' + board['opts'][optname]
     
     # macros
     macrolist = [ 'defaults', 'cpufreq_menu', ]
@@ -652,15 +629,15 @@ for board in boards:
         macrolist += board['macro']
     macrolist += [ 'debug_menu' ]
     for block in macrolist:
-        for key in macros[block]:
-            if not ('opts' in board) or not (key in board['opts']):
-                print short + key + '=' + macros[block][key]
+        for optname in macros[block]:
+            if not ('opts' in board) or not (optname in board['opts']):
+                print id + optname + '=' + macros[block][optname]
 
     # serial speed                    
     for uspeed in uploadspeed:
         for os in uspeed['os']:
             speed = uspeed['speed']
-            print short + '.menu.UploadSpeed.' + str(speed) + os + '=' + str(speed)
-            print short + '.menu.UploadSpeed.' + str(speed) + os + '.upload.speed=' + str(speed)
+            print id + '.menu.UploadSpeed.' + str(speed) + os + '=' + str(speed)
+            print id + '.menu.UploadSpeed.' + str(speed) + os + '.upload.speed=' + str(speed)
     
     print ''
