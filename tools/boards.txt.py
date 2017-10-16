@@ -29,6 +29,8 @@
 #			512K/1M/2M/4M/8M/16M:		menus for flashsize / SPIFFS ratio
 #			lwip				menus for lwip available version
 
+import collections
+
 boards = [
 	{
 		'short': 'generic',
@@ -380,125 +382,125 @@ boards = [
 ################################################################
 
 macros = {
-	'defaults': [
-		[ '.upload.tool', 'esptool' ],
-		[ '.upload.speed', '115200' ],
-		[ '.upload.maximum_data_size', '81920' ],
-		[ '.upload.wait_for_upload_port', 'true' ],
-		[ '.serial.disableDTR', 'true' ],
-		[ '.serial.disableRTS', 'true' ],
-		[ '.build.mcu', 'esp8266' ],
-		[ '.build.core', 'esp8266' ],
-		[ '.build.variant', 'generic' ],
-		[ '.build.spiffs_pagesize', '256' ],
-		[ '.build.debug_port', '' ],
-		[ '.build.debug_level', '' ],
+	'defaults': collections.OrderedDict([
+		( '.upload.tool', 'esptool' ),
+		( '.upload.speed', '115200' ),
+		( '.upload.maximum_data_size', '81920' ),
+		( '.upload.wait_for_upload_port', 'true' ),
+		( '.serial.disableDTR', 'true' ),
+		( '.serial.disableRTS', 'true' ),
+		( '.build.mcu', 'esp8266' ),
+		( '.build.core', 'esp8266' ),
+		( '.build.variant', 'generic' ),
+		( '.build.spiffs_pagesize', '256' ),
+		( '.build.debug_port', '' ),
+		( '.build.debug_level', '' ),
 
 #lwip2:
-#		[ '.build.lwip_include', 'lwip2/include' ],
-#		[ '.build.lwip_lib', '-llwip2' ],
+#		( '.build.lwip_include', 'lwip2/include' ),
+#		( '.build.lwip_lib', '-llwip2' ),
 
-		],
+		]),
 
 	#######################
 
-	'cpufreq_menu': [
-		[ '.menu.CpuFrequency.80', '80 MHz' ],
-		[ '.menu.CpuFrequency.80.build.f_cpu', '80000000L' ],
-		[ '.menu.CpuFrequency.160', '160 MHz' ],
-		[ '.menu.CpuFrequency.160.build.f_cpu', '160000000L' ],
-		],
+	'cpufreq_menu': collections.OrderedDict([
+		( '.menu.CpuFrequency.80', '80 MHz' ),
+		( '.menu.CpuFrequency.80.build.f_cpu', '80000000L' ),
+		( '.menu.CpuFrequency.160', '160 MHz' ),
+		( '.menu.CpuFrequency.160.build.f_cpu', '160000000L' ),
+		]),
 	
-	'crystalfreq_menu': [
-		[ '.menu.CrystalFreq.26', '26 MHz' ],
-		[ '.menu.CrystalFreq.40', '40 MHz' ],
-		[ '.menu.CrystalFreq.40.build.extra_flags', '-DF_CRYSTAL=40000000' ],
-		],
+	'crystalfreq_menu': collections.OrderedDict([
+		( '.menu.CrystalFreq.26', '26 MHz' ),
+		( '.menu.CrystalFreq.40', '40 MHz' ),
+		( '.menu.CrystalFreq.40.build.extra_flags', '-DF_CRYSTAL=40000000' ),
+		]),
 		
-	'flashfreq_menu': [
-		[ '.menu.FlashFreq.40', '40MHz' ],
-		[ '.menu.FlashFreq.40.build.flash_freq', '40' ],
-		[ '.menu.FlashFreq.80', '80MHz' ],
-		[ '.menu.FlashFreq.80.build.flash_freq', '80' ],
-		],
+	'flashfreq_menu': collections.OrderedDict([
+		( '.menu.FlashFreq.40', '40MHz' ),
+		( '.menu.FlashFreq.40.build.flash_freq', '40' ),
+		( '.menu.FlashFreq.80', '80MHz' ),
+		( '.menu.FlashFreq.80.build.flash_freq', '80' ),
+		]),
 		
-	'flashfreq_40': [
-		[ '.build.flash_freq', '40' ],
-		],
+	'flashfreq_40': collections.OrderedDict([
+		( '.build.flash_freq', '40' ),
+		]),
 
-	'flashfreq_80': [
-		[ '.build.flash_freq', '80' ],
-		],
+	'flashfreq_80': collections.OrderedDict([
+		( '.build.flash_freq', '80' ),
+		]),
 
 	####################### menu.resetmethod
 	
-	'resetmethod_menu': [
-		[ '.menu.ResetMethod.ck', 'ck' ],
-		[ '.menu.ResetMethod.ck.upload.resetmethod', 'ck' ],
-		[ '.menu.ResetMethod.nodemcu', 'nodemcu' ],
-		[ '.menu.ResetMethod.nodemcu.upload.resetmethod', 'nodemcu' ],
-		],
+	'resetmethod_menu': collections.OrderedDict([
+		( '.menu.ResetMethod.ck', 'ck' ),
+		( '.menu.ResetMethod.ck.upload.resetmethod', 'ck' ),
+		( '.menu.ResetMethod.nodemcu', 'nodemcu' ),
+		( '.menu.ResetMethod.nodemcu.upload.resetmethod', 'nodemcu' ),
+		]),
 	
 	####################### upload.resetmethod
 	
-	'resetmethod_ck': [
-		[ '.upload.resetmethod', 'ck' ],
-		],
+	'resetmethod_ck': collections.OrderedDict([
+		( '.upload.resetmethod', 'ck' ),
+		]),
 	
-	'resetmethod_nodemcu': [
-		[ '.upload.resetmethod', 'nodemcu' ],
-		],
+	'resetmethod_nodemcu': collections.OrderedDict([
+		( '.upload.resetmethod', 'nodemcu' ),
+		]),
 
 	####################### menu.FlashMode
 	
-	'flashmode_menu': [
-		[ '.menu.FlashMode.qio', 'QIO' ],
-		[ '.menu.FlashMode.qio.build.flash_mode', 'qio' ],
-		[ '.menu.FlashMode.qout', 'QOUT' ],
-		[ '.menu.FlashMode.qout.build.flash_mode', 'qout' ],
-		[ '.menu.FlashMode.dio', 'DIO' ],
-		[ '.menu.FlashMode.dio.build.flash_mode', 'dio' ],
-		[ '.menu.FlashMode.dout', 'DOUT' ],
-		[ '.menu.FlashMode.dout.build.flash_mode', 'dout' ],
-		],
+	'flashmode_menu': collections.OrderedDict([
+		( '.menu.FlashMode.qio', 'QIO' ),
+		( '.menu.FlashMode.qio.build.flash_mode', 'qio' ),
+		( '.menu.FlashMode.qout', 'QOUT' ),
+		( '.menu.FlashMode.qout.build.flash_mode', 'qout' ),
+		( '.menu.FlashMode.dio', 'DIO' ),
+		( '.menu.FlashMode.dio.build.flash_mode', 'dio' ),
+		( '.menu.FlashMode.dout', 'DOUT' ),
+		( '.menu.FlashMode.dout.build.flash_mode', 'dout' ),
+		]),
 
 	####################### default flash_mode
 	
-	'flashmode_dio': [
-		[ '.build.flash_mode', 'dio' ],
-		],
+	'flashmode_dio': collections.OrderedDict([
+		( '.build.flash_mode', 'dio' ),
+		]),
 
-	'flashmode_qio': [
-		[ '.build.flash_mode', 'qio' ],
-		],
+	'flashmode_qio': collections.OrderedDict([
+		( '.build.flash_mode', 'qio' ),
+		]),
 
-	'flashmode_dout': [
-		[ '.build.flash_mode', 'dout' ],
-		],
+	'flashmode_dout': collections.OrderedDict([
+		( '.build.flash_mode', 'dout' ),
+		]),
 
-	'flashmode_qout': [
-		[ '.build.flash_mode', 'qout' ],
-		],
+	'flashmode_qout': collections.OrderedDict([
+		( '.build.flash_mode', 'qout' ),
+		]),
 
 	####################### lwip
 
-	'lwip': [
+	'lwip': collections.OrderedDict([
 # lwip2:
-#		[ '.menu.lwIPVariant.open', 'v2' ],
-#		[ '.menu.lwIPVariant.open.build.lwip_include', 'lwip2/include' ],
-#		[ '.menu.lwIPVariant.open.build.lwip_lib', '-llwip2' ],
+#		( '.menu.lwIPVariant.open', 'v2' ),
+#		( '.menu.lwIPVariant.open.build.lwip_include', 'lwip2/include' ),
+#		( '.menu.lwIPVariant.open.build.lwip_lib', '-llwip2' ),
 
-		[ '.menu.LwIPVariant.Prebuilt', 'Prebuilt Source (gcc)' ],
-		[ '.menu.LwIPVariant.Prebuilt.build.lwip_lib', '-llwip_gcc' ],
-		[ '.menu.LwIPVariant.Prebuilt.build.lwip_flags', '-DLWIP_OPEN_SRC' ],
-		[ '.menu.LwIPVariant.Espressif', 'Espressif (xcc)' ],
-		[ '.menu.LwIPVariant.Espressif.build.lwip_lib', '-llwip' ],
-		[ '.menu.LwIPVariant.Espressif.build.lwip_flags', '-DLWIP_MAYBE_XCC' ],
-		[ '.menu.LwIPVariant.OpenSource', 'Open Source (gcc)' ],
-		[ '.menu.LwIPVariant.OpenSource.build.lwip_lib', '-llwip_src' ],
-		[ '.menu.LwIPVariant.OpenSource.build.lwip_flags', '-DLWIP_OPEN_SRC' ],
-		[ '.menu.LwIPVariant.OpenSource.recipe.hooks.sketch.prebuild.1.pattern', 'make -C "{runtime.platform.path}/tools/sdk/lwip/src" install TOOLS_PATH="{runtime.tools.xtensa-lx106-elf-gcc.path}/bin/xtensa-lx106-elf-"' ],
-		],
+		( '.menu.LwIPVariant.Prebuilt', 'Prebuilt Source (gcc)' ),
+		( '.menu.LwIPVariant.Prebuilt.build.lwip_lib', '-llwip_gcc' ),
+		( '.menu.LwIPVariant.Prebuilt.build.lwip_flags', '-DLWIP_OPEN_SRC' ),
+		( '.menu.LwIPVariant.Espressif', 'Espressif (xcc)' ),
+		( '.menu.LwIPVariant.Espressif.build.lwip_lib', '-llwip' ),
+		( '.menu.LwIPVariant.Espressif.build.lwip_flags', '-DLWIP_MAYBE_XCC' ),
+		( '.menu.LwIPVariant.OpenSource', 'Open Source (gcc)' ),
+		( '.menu.LwIPVariant.OpenSource.build.lwip_lib', '-llwip_src' ),
+		( '.menu.LwIPVariant.OpenSource.build.lwip_flags', '-DLWIP_OPEN_SRC' ),
+		( '.menu.LwIPVariant.OpenSource.recipe.hooks.sketch.prebuild.1.pattern', 'make -C "{runtime.platform.path}/tools/sdk/lwip/src" install TOOLS_PATH="{runtime.tools.xtensa-lx106-elf-gcc.path}/bin/xtensa-lx106-elf-"' ),
+		]),
 	}
 
 ################################################################
@@ -540,16 +542,16 @@ def all_debug ():
 	options = combn(listcomb)
 	options += comb1(listnocomb)
 	options += [ listcomb + listnocomb ]
-	debugmenu = [
-			[ '.menu.Debug.Disabled', 'Disabled' ],
-			[ '.menu.Debug.Disabled.build.debug_port', '' ],
-			[ '.menu.Debug.Serial', 'Serial' ],
-			[ '.menu.Debug.Serial.build.debug_port', '-DDEBUG_ESP_PORT=Serial' ],
-			[ '.menu.Debug.Serial1', 'Serial1' ],
-			[ '.menu.Debug.Serial1.build.debug_port', '-DDEBUG_ESP_PORT=Serial1' ],
-			[ '.menu.DebugLevel.None____', 'None' ],
-			[ '.menu.DebugLevel.None____.build.debug_level', '' ],
-		]
+	debugmenu = collections.OrderedDict([
+			( '.menu.Debug.Disabled', 'Disabled' ),
+			( '.menu.Debug.Disabled.build.debug_port', '' ),
+			( '.menu.Debug.Serial', 'Serial' ),
+			( '.menu.Debug.Serial.build.debug_port', '-DDEBUG_ESP_PORT=Serial' ),
+			( '.menu.Debug.Serial1', 'Serial1' ),
+			( '.menu.Debug.Serial1.build.debug_port', '-DDEBUG_ESP_PORT=Serial1' ),
+			( '.menu.DebugLevel.None____', 'None' ),
+			( '.menu.DebugLevel.None____.build.debug_level', '' ),
+		])
 	for optlist in options:
 		debugname = ''
 		debugmenuname = ''
@@ -560,59 +562,48 @@ def all_debug ():
 				debugmenuname += '+'
 			debugmenuname += opt
 			debugdefs += ' -DDEBUG_ESP_' + opt
-		debugmenu += [
-			[ '.menu.DebugLevel.' + debugname, debugmenuname ],
-			[ '.menu.DebugLevel.' + debugname + '.build.debug_level', debugdefs ]
-			]
+		debugmenu.update(collections.OrderedDict([
+			( '.menu.DebugLevel.' + debugname, debugmenuname ),
+			( '.menu.DebugLevel.' + debugname + '.build.debug_level', debugdefs )
+			]))
 	return { 'debug_menu': debugmenu }
 
-def flash_size (display, optname, ld, desc, max_upload_size, spiffs_start, spiffs_size, spiffs_blocksize):
+def flash_size (display, optname, ld, desc, max_upload_size, spiffs_start = 0, spiffs_size = 0, spiffs_blocksize = 0):
 	menu = '.menu.FlashSize.' + optname
 	menub = menu + '.build.'
-	d = [
-		[ menu, display + ' (' + desc + ')' ],
-		[ menub + 'flash_size', display ],
-		[ menub + 'flash_ld', ld ],
-		[ menub + 'spiffs_pagesize', '256' ],
-		[ menu + '.upload.maximum_size', "%i" % max_upload_size ],
-		]
+	d = collections.OrderedDict([
+		( menu, display + ' (' + desc + ')' ),
+		( menub + 'flash_size', display ),
+		( menub + 'flash_ld', ld ),
+		( menub + 'spiffs_pagesize', '256' ),
+		( menu + '.upload.maximum_size', "%i" % max_upload_size ),
+		])
 	if spiffs_start > 0:
-		d += [
-			[ menub + 'spiffs_start', "0x%05X" % spiffs_start ],
-			[ menub + 'spiffs_end', "0x%05X" % (spiffs_start + spiffs_size) ],
-			[ menub + 'spiffs_blocksize', "%i" % spiffs_blocksize ],
-			]
+		d.update(collections.OrderedDict([ 
+			( menub + 'spiffs_start', "0x%05X" % spiffs_start ),
+			( menub + 'spiffs_end', "0x%05X" % (spiffs_start + spiffs_size) ),
+			( menub + 'spiffs_blocksize', "%i" % spiffs_blocksize ),
+			]))
 	return d
 		
 def all_flash_size ():
-	return { '512K': 
-		  flash_size('512K', '512K0',   'eagle.flash.512k0.ld',     'no SPIFFS', 499696, 0, 0, 0)
-		+ flash_size('512K', '512K64',  'eagle.flash.512k64.ld',   '64K SPIFFS', 434160, 0x6B000, 0x10000, 4096)
-		+ flash_size('512K', '512K128', 'eagle.flash.512k128.ld', '128K SPIFFS', 368624, 0x5B000, 0x20000, 4096)
-		,
-		'1M':
-		  flash_size('1M', '1M0',   'eagle.flash.1m0.ld',     'no SPIFFS', 1023984, 0, 0, 0)
-		+ flash_size('1M', '1M64',  'eagle.flash.1m64.ld',   '64K SPIFFS', 958448, 0xEB000, 0x10000, 4096)
-		+ flash_size('1M', '1M128', 'eagle.flash.1m128.ld', '128K SPIFFS', 892912, 0xDB000, 0x20000, 4096)
-		+ flash_size('1M', '1M144', 'eagle.flash.1m144.ld', '144K SPIFFS', 876528, 0xD7000, 0x24000, 4096)
-		+ flash_size('1M', '1M160', 'eagle.flash.1m160.ld', '160K SPIFFS', 860144, 0xD3000, 0x28000, 4096)
-		+ flash_size('1M', '1M192', 'eagle.flash.1m192.ld', '192K SPIFFS', 827376, 0xCB000, 0x30000, 4096)
-		+ flash_size('1M', '1M256', 'eagle.flash.1m256.ld', '256K SPIFFS', 761840, 0xBB000, 0x40000, 4096)
-		+ flash_size('1M', '1M512', 'eagle.flash.1m512.ld', '512K SPIFFS', 499696, 0x7B000, 0x80000, 8192)
-		,
-		'2M':
-		  flash_size('2M', '2M', 'eagle.flash.2m.ld', '1M SPIFFS', 1044464, 0x100000,  0xFB000, 8192)
-		,
-		'4M':
-		  flash_size('4M', '4M1M', 'eagle.flash.4m1m.ld', '1M SPIFFS', 1044464, 0x300000,  0xFB000, 8192)
-		+ flash_size('4M', '4M3M', 'eagle.flash.4m.ld',   '3M SPIFFS', 1044464, 0x100000, 0x2FB000, 8192)
-		,  
-		'8M':
-		  flash_size('8M', '8M7M', 'eagle.flash.8m.ld', '7M SPIFFS', 1044464, 0x100000, 0x6FB000, 8192)
-		,
-		'16M':
-		  flash_size('16M', '16M15M', 'eagle.flash.16m.ld', '15M SPIFFS', 1044464, 0x100000, 0x16FB000, 8192)
-		}
+	f512 =      flash_size('512K', '512K0',   'eagle.flash.512k0.ld',     'no SPIFFS', 499696)
+	f512.update(flash_size('512K', '512K64',  'eagle.flash.512k64.ld',   '64K SPIFFS', 434160,   0x6B000,   0x10000, 4096))
+	f512.update(flash_size('512K', '512K128', 'eagle.flash.512k128.ld', '128K SPIFFS', 368624,   0x5B000,   0x20000, 4096))
+	f1m =       flash_size(  '1M', '1M0',     'eagle.flash.1m0.ld',       'no SPIFFS', 1023984)
+	f1m.update( flash_size(  '1M', '1M64',    'eagle.flash.1m64.ld',     '64K SPIFFS', 958448,   0xEB000,   0x10000, 4096))
+	f1m.update( flash_size(  '1M', '1M128',   'eagle.flash.1m128.ld',   '128K SPIFFS', 892912,   0xDB000,   0x20000, 4096))
+	f1m.update( flash_size(  '1M', '1M144',   'eagle.flash.1m144.ld',   '144K SPIFFS', 876528,   0xD7000,   0x24000, 4096))
+	f1m.update( flash_size(  '1M', '1M160',   'eagle.flash.1m160.ld',   '160K SPIFFS', 860144,   0xD3000,   0x28000, 4096))
+	f1m.update( flash_size(  '1M', '1M192',   'eagle.flash.1m192.ld',   '192K SPIFFS', 827376,   0xCB000,   0x30000, 4096))
+	f1m.update( flash_size(  '1M', '1M256',   'eagle.flash.1m256.ld',   '256K SPIFFS', 761840,   0xBB000,   0x40000, 4096))
+	f1m.update( flash_size(  '1M', '1M512',   'eagle.flash.1m512.ld',   '512K SPIFFS', 499696,   0x7B000,   0x80000, 8192))
+	f2m =       flash_size(  '2M', '2M',      'eagle.flash.2m.ld',        '1M SPIFFS', 1044464, 0x100000,   0xFB000, 8192)
+	f4m =       flash_size(  '4M', '4M1M',    'eagle.flash.4m1m.ld',      '1M SPIFFS', 1044464, 0x300000,   0xFB000, 8192)
+	f4m.update( flash_size(  '4M', '4M3M',    'eagle.flash.4m.ld',        '3M SPIFFS', 1044464, 0x100000,  0x2FB000, 8192))
+	f8m =       flash_size(  '8M', '8M7M',    'eagle.flash.8m.ld',        '7M SPIFFS', 1044464, 0x100000,  0x6FB000, 8192)
+	f16m =      flash_size( '16M', '16M15M',  'eagle.flash.16m.ld',      '15M SPIFFS', 1044464, 0x100000, 0x16FB000, 8192)
+	return { '512K': f512, '1M': f1m, '2M': f2m, '4M': f4m, '8M': f8m, '16M': f16m }
 
 macros.update(all_flash_size())
 macros.update(all_debug())
@@ -652,9 +643,9 @@ for board in boards:
 		macrolist += board['macro']
 	macrolist += [ 'debug_menu' ]
 	for block in macrolist:
-		for keyval in macros[block]:
-			if not ('opts' in board) or not (keyval[0] in board['opts']):
-				print short + keyval[0] + '=' + keyval[1]
+		for key in macros[block]:
+			if not ('opts' in board) or not (str(key) in board['opts']):
+				print short + key + '=' + macros[block][key]
 
 	# serial speed					
 	for uspeed in uploadspeed:
