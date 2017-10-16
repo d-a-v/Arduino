@@ -14,20 +14,19 @@
 # it.
 
 # board descriptor:
-#    short    short name
 #    name     display name
 #    opts:    specific entries dicts (overrides same entry in macros)
 #    macro:   common entries
 #        unmodifiable parameters:
-#            resetmethod_ck/_nodemcu:    fixed reset method
-#            flashmode_qio/_dio/_qout/_dout:    fixed flash mode
-#            flashfreq_40/_80:        fixed flash frequency
+#            resetmethod_ck/_nodemcu:        fixed reset method
+#            flashmode_qio/_dio/_qout/_dout: fixed flash mode
+#            flashfreq_40/_80:               fixed flash frequency
 #        selection menu:
-#            resetmethod_menu        
-#            crystalfreq/flashfreq_menu:    menus for selection crystal/flash frequency
-#            flashmode_menu:            menus for flashmode selection (dio/dout/qio/qout)
-#            512K/1M/2M/4M/8M/16M:        menus for flashsize / SPIFFS ratio
-#            lwip                menus for lwip available version
+#            resetmethod_menu            menus for reset method
+#            crystalfreq/flashfreq_menu: menus for crystal/flash frequency selection
+#            flashmode_menu:             menus for flashmode selection (dio/dout/qio/qout)
+#            512K/1M/2M/4M/8M/16M:       menus for flash & SPIFFS size
+#            lwip                        menus for available lwip versions
 
 import collections
 
