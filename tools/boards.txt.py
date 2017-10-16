@@ -210,6 +210,7 @@ boards = [
 		'macro': [
 			'resetmethod_nodemcu',
 			'flashmode_dio',
+			'flashfreq_40',
 			'512K',
 			],
 	},
@@ -245,6 +246,7 @@ boards = [
 		'name': 'Wemos D1 mini lite',
 		'opts': {
 			'.build.board': 'ESP8266_WEMOS_D1MINILITE',
+			'.build.variant': 'd1_mini_lite',
 			},
 		'macro': [
 			'resetmethod_nodemcu',
@@ -275,10 +277,10 @@ boards = [
 			'.build.variant': 'espino',
 			},
 		'macro': [
+			'resetmethod_menu',
 			'flashmode_qio',
 			'flashfreq_40',
 			'4M',
-			'resetmethod_menu',
 			]
 	},
 	{
@@ -322,7 +324,6 @@ boards = [
 		'macro': [
 			'flashmode_qio',
 			'flashfreq_menu',
-			'flashfreq_40',
 			'1M',
 			]
 	},
@@ -356,6 +357,7 @@ boards = [
 		'opts': {
 			'.build.board': 'GEN4_IOD',
 			'.build.f_cpu': '160000000L',
+			'.build.variant': 'gen4iod',
 			},
 		'macro': [
 			'flashmode_qio',
