@@ -373,11 +373,6 @@ macros = {
         ( '.build.spiffs_pagesize', '256' ),
         ( '.build.debug_port', '' ),
         ( '.build.debug_level', '' ),
-
-#lwip2:
-#        ( '.build.lwip_include', 'lwip2/include' ),
-#        ( '.build.lwip_lib', '-llwip2' ),
-
         ]),
 
     #######################
@@ -464,10 +459,9 @@ macros = {
 
     'lwip': collections.OrderedDict([
 # lwip2:
-#        ( '.menu.lwIPVariant.open', 'v2' ),
-#        ( '.menu.lwIPVariant.open.build.lwip_include', 'lwip2/include' ),
-#        ( '.menu.lwIPVariant.open.build.lwip_lib', '-llwip2' ),
-
+#        ( '.menu.LwIPVariant.open', 'v2' ),
+#        ( '.menu.LwIPVariant.open.build.lwip_include', 'lwip2/include' ),
+#        ( '.menu.LwIPVariant.open.build.lwip_lib', '-llwip2' ),
         ( '.menu.LwIPVariant.Prebuilt', 'Prebuilt Source (gcc)' ),
         ( '.menu.LwIPVariant.Prebuilt.build.lwip_lib', '-llwip_gcc' ),
         ( '.menu.LwIPVariant.Prebuilt.build.lwip_flags', '-DLWIP_OPEN_SRC' ),
@@ -609,7 +603,6 @@ print 'menu.ESPModule=Module'
 print 'menu.Debug=Debug port'
 print 'menu.DebugLevel=Debug Level'
 print 'menu.LwIPVariant=lwIP Variant'
-print 'menu.lwIP=lwIP Build'
 print ''
 
 for id in boards:
