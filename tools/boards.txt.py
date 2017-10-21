@@ -191,7 +191,7 @@ boards = collections.OrderedDict([
         'name': 'SparkFun ESP8266 Thing Dev',
         'opts': {
             '.build.board': 'ESP8266_THING_DEV',
-            '.build.variant': 'thingdev',
+            '.build.variant': 'thing',
             },
         'macro': [
             'resetmethod_nodemcu',
@@ -229,7 +229,7 @@ boards = collections.OrderedDict([
         'name': 'Wemos D1 mini lite',
         'opts': {
             '.build.board': 'ESP8266_WEMOS_D1MINILITE',
-            '.build.variant': 'd1_mini_lite',
+            '.build.variant': 'd1_mini',
             },
         'macro': [
             'resetmethod_nodemcu',
@@ -334,7 +334,7 @@ boards = collections.OrderedDict([
         'opts': {
             '.build.board': 'GEN4_IOD',
             '.build.f_cpu': '160000000L',
-            '.build.variant': 'gen4iod',
+            '.build.variant': 'generic',
             },
         'macro': [
             'flashmode_qio',
