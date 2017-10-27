@@ -382,7 +382,7 @@ void ESP8266WebServer::send(int code, const char* content_type, const String& co
     //if(code == 200 && content.length() == 0 && _contentLength == CONTENT_LENGTH_NOT_SET)
     //  _contentLength = CONTENT_LENGTH_UNKNOWN;
     _prepareHeader(header, code, content_type, content.length());
-    _currentClient.write(header.c_str(), header.length());
+    _currentClientWrite(header.c_str(), header.length());
     if(content.length())
       sendContent(content);
 }
@@ -398,7 +398,7 @@ void ESP8266WebServer::send_P(int code, PGM_P content_type, PGM_P content) {
     char type[64];
     memccpy_P((void*)type, (PGM_VOID_P)content_type, 0, sizeof(type));
     _prepareHeader(header, code, (const char* )type, contentLength);
-    _currentClient.write(header.c_str(), header.length());
+    _currentClientWrite(header.c_str(), header.length());
     sendContent_P(content);
 }
 
@@ -426,13 +426,13 @@ void ESP8266WebServer::sendContent(const String& content) {
     char * chunkSize = (char *)malloc(11);
     if(chunkSize){
       sprintf(chunkSize, "%x%s", len, footer);
-      _currentClient.write(chunkSize, strlen(chunkSize));
+      _currentClientWrite(chunkSize, strlen(chunkSize));
       free(chunkSize);
     }
   }
-  _currentClient.write(content.c_str(), len);
+  _currentClientWrite(content.c_str(), len);
   if(_chunked){
-    _currentClient.write(footer, 2);
+    _currentClientWrite(footer, 2);
   }
 }
 
@@ -446,13 +446,13 @@ void ESP8266WebServer::sendContent_P(PGM_P content, size_t size) {
     char * chunkSize = (char *)malloc(11);
     if(chunkSize){
       sprintf(chunkSize, "%x%s", size, footer);
-      _currentClient.write(chunkSize, strlen(chunkSize));
+      _currentClientWrite(chunkSize, strlen(chunkSize));
       free(chunkSize);
     }
   }
-  _currentClient.write_P(content, size);
+  _currentClientWrite_P(content, size);
   if(_chunked){
-    _currentClient.write(footer, 2);
+    _currentClientWrite(footer, 2);
   }
 }
 
