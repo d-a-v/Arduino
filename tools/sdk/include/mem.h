@@ -35,16 +35,24 @@ bool ICACHE_FLASH_ATTR check_memleak_debug_enable(void)
 }
 */
 
+#define os_free free
+#define os_malloc malloc
+#define os_calloc calloc
+#define os_realloc realloc
+#define os_zalloc zalloc
+
 #ifndef MEMLEAK_DEBUG
 #define MEMLEAK_DEBUG_ENABLE	0
+#if 0
 #define os_free(s)        vPortFree(s, "", 0)
 #define os_malloc(s)      pvPortMalloc(s, "", 0)
 #define os_calloc(s)      pvPortCalloc(s, "", 0);
 #define os_realloc(p, s)  pvPortRealloc(p, s, "", 0)
 #define os_zalloc(s)      pvPortZalloc(s, "", 0)
+#endif
 #else
 #define MEMLEAK_DEBUG_ENABLE	1
-
+#if 0 // old
 #define os_free(s) \
 do{\
 	static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;	\
@@ -75,7 +83,8 @@ do{\
 		pvPortZalloc(s, mem_debug_file, __LINE__);	\
 	})
 
-#endif
+#endif // old
+
+#endif //defined(MEMLEAK_DEBUG)
 
 #endif
-
