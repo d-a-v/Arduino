@@ -45,7 +45,7 @@ extern "C"
 #endif
 
 #ifdef DEBUG_SSL
-#define SSL_DEBUG_OPTS SSL_DISPLAY_STATES
+#define SSL_DEBUG_OPTS (SSL_DISPLAY_STATES | SSL_DISPLAY_CERTS)
 #else
 #define SSL_DEBUG_OPTS 0
 #endif
@@ -94,14 +94,14 @@ public:
         if (_ssl) {
             /* Creating a new TLS session on top of a new TCP connection.
                ssl_free will want to send a close notify alert, but the old TCP connection
-               is already gone at this point, so reset io_ctx. */
-            io_ctx = nullptr;
+               is already gone at this point, so reset s_io_ctx. */
+            s_io_ctx = nullptr;
             ssl_free(_ssl);
             _available = 0;
             _read_ptr = nullptr;
         }
-        io_ctx = ctx;
-        _ssl = ssl_client_new(_ssl_ctx, reinterpret_cast<int>(this), nullptr, 0, ext);
+        s_io_ctx = ctx;
+        _ssl = ssl_client_new(_ssl_ctx, 0, nullptr, 0, ext);
         uint32_t t = millis();
 
         while (millis() - t < timeout_ms && ssl_handshake_status(_ssl) != SSL_OK) {
@@ -114,7 +114,7 @@ public:
     }
 
     void connectServer(ClientContext *ctx) {
-        io_ctx = ctx;
+        s_io_ctx = ctx;
 	_ssl = ssl_server_new(_ssl_ctx, reinterpret_cast<int>(this));
         _isServer = true;
 
@@ -125,6 +125,7 @@ public:
             uint8_t* data;
             int rc = ssl_read(_ssl, &data);
             if (rc < SSL_OK) {
+                ssl_display_error(rc);
                 break;
             }
         }
@@ -132,7 +133,7 @@ public:
 
     void stop()
     {
-        io_ctx = nullptr;
+        s_io_ctx = nullptr;
     }
 
     bool connected()
@@ -225,6 +226,14 @@ public:
         return loadObject(type, buf.get(), size);
     }
 
+    bool loadObject_P(int type, PGM_VOID_P data, size_t size)
+    {
+        std::unique_ptr<uint8_t[]> buf(new uint8_t[size]);
+        memcpy_P(buf.get(),data, size);
+        return loadObject(type, buf.get(), size);
+    }
+
+
     bool loadObject(int type, const uint8_t* data, size_t size)
     {
         int rc = ssl_obj_memory_load(_ssl_ctx, type, data, static_cast<int>(size), nullptr);
@@ -235,6 +244,25 @@ public:
         return true;
     }
 
+    bool verifyCert()
+    {
+        int rc = ssl_verify_cert(_ssl);
+        if (_allowSelfSignedCerts && rc == SSL_X509_ERROR(X509_VFY_ERROR_SELF_SIGNED)) {
+            DEBUGV("Allowing self-signed certificate\n");
+            return true;
+        } else if (rc != SSL_OK) {
+            DEBUGV("ssl_verify_cert returned %d\n", rc);
+            ssl_display_error(rc);
+            return false;
+        }
+        return true;
+    }
+
+    void allowSelfSignedCerts()
+    {
+        _allowSelfSignedCerts = true;
+    }
+
     operator SSL*()
     {
         return _ssl;
@@ -242,7 +270,8 @@ public:
 
     static ClientContext* getIOContext(int fd)
     {
-        return reinterpret_cast<SSLContext*>(fd)->io_ctx;
+        (void) fd;
+        return s_io_ctx;
     }
 
     int loadServerX509Cert(const uint8_t *cert, int len) {
@@ -284,11 +313,13 @@ protected:
     int _refcnt = 0;
     const uint8_t* _read_ptr = nullptr;
     size_t _available = 0;
-    ClientContext* io_ctx;
+    bool _allowSelfSignedCerts = false;
+    static ClientContext* s_io_ctx;
 };
 
 SSL_CTX* SSLContext::_ssl_ctx = nullptr;
 int SSLContext::_ssl_ctx_refcnt = 0;
+ClientContext* SSLContext::s_io_ctx = nullptr;
 
 WiFiClientSecure::WiFiClientSecure()
 {
@@ -620,67 +651,78 @@ bool WiFiClientSecure::verifyCertChain(const char* domain_name)
     if (!_ssl) {
         return false;
     }
-    int rc = ssl_verify_cert(*_ssl);
-    if (rc != SSL_OK) {
-        DEBUGV("ssl_verify_cert returned %d\n", rc);
+    if (!_ssl->verifyCert()) {
         return false;
     }
-
     return _verifyDN(domain_name);
 }
 
-bool WiFiClientSecure::setCACert(const uint8_t* pk, size_t size)
+void WiFiClientSecure::_initSSLContext()
 {
     if (!_ssl) {
         _ssl = new SSLContext;
         _ssl->ref();
     }
+}
+
+bool WiFiClientSecure::setCACert(const uint8_t* pk, size_t size)
+{
+    _initSSLContext();
     return _ssl->loadObject(SSL_OBJ_X509_CACERT, pk, size);
 }
 
 bool WiFiClientSecure::setCertificate(const uint8_t* pk, size_t size)
 {
-    if (!_ssl) {
-        _ssl = new SSLContext;
-        _ssl->ref();
-    }
+    _initSSLContext();
     return _ssl->loadObject(SSL_OBJ_X509_CERT, pk, size);
 }
 
 bool WiFiClientSecure::setPrivateKey(const uint8_t* pk, size_t size)
 {
-    if (!_ssl) {
-        _ssl = new SSLContext;
-        _ssl->ref();
-    }
+    _initSSLContext();
     return _ssl->loadObject(SSL_OBJ_RSA_KEY, pk, size);
+}
+
+bool WiFiClientSecure::setCACert_P(PGM_VOID_P pk, size_t size)
+{
+    _initSSLContext();
+    return _ssl->loadObject_P(SSL_OBJ_X509_CACERT, pk, size);
+}
+
+bool WiFiClientSecure::setCertificate_P(PGM_VOID_P pk, size_t size)
+{
+    _initSSLContext();
+    return _ssl->loadObject_P(SSL_OBJ_X509_CERT, pk, size);
+}
+
+bool WiFiClientSecure::setPrivateKey_P(PGM_VOID_P pk, size_t size)
+{
+    _initSSLContext();
+    return _ssl->loadObject_P(SSL_OBJ_RSA_KEY, pk, size);
 }
 
 bool WiFiClientSecure::loadCACert(Stream& stream, size_t size)
 {
-    if (!_ssl) {
-        _ssl = new SSLContext;
-        _ssl->ref();
-    }
+    _initSSLContext();
     return _ssl->loadObject(SSL_OBJ_X509_CACERT, stream, size);
 }
 
 bool WiFiClientSecure::loadCertificate(Stream& stream, size_t size)
 {
-    if (!_ssl) {
-        _ssl = new SSLContext;
-        _ssl->ref();
-    }
+    _initSSLContext();
     return _ssl->loadObject(SSL_OBJ_X509_CERT, stream, size);
 }
 
 bool WiFiClientSecure::loadPrivateKey(Stream& stream, size_t size)
 {
-    if (!_ssl) {
-        _ssl = new SSLContext;
-        _ssl->ref();
-    }
+    _initSSLContext();
     return _ssl->loadObject(SSL_OBJ_RSA_KEY, stream, size);
+}
+
+void WiFiClientSecure::allowSelfSignedCerts()
+{
+    _initSSLContext();
+    _ssl->allowSelfSignedCerts();
 }
 
 extern "C" int __ax_port_read(int fd, uint8_t* buffer, size_t count)
