@@ -26,8 +26,9 @@
 #            crystalfreq/flashfreq_menu: menus for crystal/flash frequency selection
 #            flashmode_menu:             menus for flashmode selection (dio/dout/qio/qout)
 #            512K/1M/2M/4M/8M/16M:       menus for flash & SPIFFS size
-#            lwip                        menus for available lwip versions
+#            lwip/lwip2                  menus for available lwip versions
 
+import sys
 import collections
 
 boards = collections.OrderedDict([
@@ -42,7 +43,6 @@ boards = collections.OrderedDict([
             'flashfreq_menu',
             'flashmode_menu',
             '512K', '1M', '2M', '4M', '8M', '16M',
-            'lwip',
             ],
     }),
     ( 'esp8285', {
@@ -457,11 +457,13 @@ macros = {
 
     ####################### lwip
 
+    'lwip2': collections.OrderedDict([
+        ( '.menu.LwIPVariant.open', 'v2' ),
+        ( '.menu.LwIPVariant.open.build.lwip_include', 'lwip2/include' ),
+        ( '.menu.LwIPVariant.open.build.lwip_lib', '-llwip2' ),
+        ]),
+
     'lwip': collections.OrderedDict([
-# lwip2:
-#        ( '.menu.LwIPVariant.open', 'v2' ),
-#        ( '.menu.LwIPVariant.open.build.lwip_include', 'lwip2/include' ),
-#        ( '.menu.LwIPVariant.open.build.lwip_lib', '-llwip2' ),
         ( '.menu.LwIPVariant.Prebuilt', 'Prebuilt Source (gcc)' ),
         ( '.menu.LwIPVariant.Prebuilt.build.lwip_lib', '-llwip_gcc' ),
         ( '.menu.LwIPVariant.Prebuilt.build.lwip_flags', '-DLWIP_OPEN_SRC' ),
@@ -489,6 +491,8 @@ uploadspeed = [
         ]
 
 ################################################################
+################################################################
+# defs
 
 # https://rosettacode.org/wiki/Combinations#Python
 def comb (m, lst):
@@ -511,6 +515,7 @@ def comb1 (lst):
 def all_debug ():
     listcomb = [ 'SSL', 'TLS_MEM', 'HTTP_CLIENT', 'HTTP_SERVER' ]
     listnocomb = [ 'CORE', 'WIFI', 'HTTP_UPDATE', 'UPDATER', 'OTA' ]
+    listnocomb += [ 'NULL -include "umm_malloc/umm_malloc_cfg.h"' ]
     options = combn(listcomb)
     options += comb1(listnocomb)
     options += [ listcomb + listnocomb ]
@@ -529,10 +534,16 @@ def all_debug ():
         debugmenuname = ''
         debugdefs = ''
         for opt in optlist:
-            debugname += opt;
+            space = opt.find(" ")
+            if space > 0:
+                # remove subsequent associated gcc cmdline option
+                simpleopt = opt[0:space]
+            else:
+                simpleopt = opt
+            debugname += simpleopt
             if debugmenuname != '':
                 debugmenuname += '+'
-            debugmenuname += opt
+            debugmenuname += simpleopt
             debugdefs += ' -DDEBUG_ESP_' + opt
         debugmenu.update(collections.OrderedDict([
             ( '.menu.DebugLevel.' + debugname, debugmenuname ),
@@ -584,8 +595,17 @@ def all_flash_size ():
          '16M': f16m
         }
 
+################################################################
+################################################################
+# entry point
+
+want_lwip2 = len(sys.argv) > 1
+
 macros.update(all_flash_size())
 macros.update(all_debug())
+
+if not want_lwip2:
+    boards['generic']['macro'] += [ 'lwip' ]
 
 print '#'
 print '# this file is script-generated and is likely to be overwritten'
@@ -619,7 +639,9 @@ for id in boards:
     macrolist = [ 'defaults', 'cpufreq_menu', ]
     if 'macro' in board:
         macrolist += board['macro']
-    macrolist += [ 'debug_menu' ]
+    if want_lwip2:
+        macrolist += [ 'lwip2', 'lwip', ]
+    macrolist += [ 'debug_menu', ]
     for block in macrolist:
         for optname in macros[block]:
             if not ('opts' in board) or not (optname in board['opts']):
