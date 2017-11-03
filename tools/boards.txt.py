@@ -599,13 +599,19 @@ def all_flash_size ():
 ################################################################
 # entry point
 
-want_lwip2 = len(sys.argv) > 1
+if len(sys.argv) > 1 and sys.argv[1] == "lwip1":
+    lwip2_first = 0
+elif len(sys.argv) > 1 and sys.argv[1] == "lwip2":
+    lwip2_first = 1
+else:
+    print ""
+    print "Please give 'lwip1' or 'lwip2' as first argument"
+    print "This will be the default in the generated file"
+    print ""
+    exit(1)
 
 macros.update(all_flash_size())
 macros.update(all_debug())
-
-if not want_lwip2:
-    boards['generic']['macro'] += [ 'lwip' ]
 
 print '#'
 print '# this file is script-generated and is likely to be overwritten'
@@ -639,8 +645,10 @@ for id in boards:
     macrolist = [ 'defaults', 'cpufreq_menu', ]
     if 'macro' in board:
         macrolist += board['macro']
-    if want_lwip2:
-        macrolist += [ 'lwip2', 'lwip', ]
+    if lwip2_first:
+        macrolist += [ 'lwip2', 'lwip' ]
+    else:
+        macrolist += [ 'lwip', 'lwip2' ]
     macrolist += [ 'debug_menu', ]
     for block in macrolist:
         for optname in macros[block]:
