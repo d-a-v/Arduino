@@ -9,6 +9,7 @@
 #include "lwip/ip_addr.h"
 #else
 // lwip1 ip_addr definition renamed ip_addr_v4
+#if 0
 typedef struct ip_addr_v4
 {
 	uint32_t addr;
@@ -19,6 +20,7 @@ struct ip_info {
     struct ip_addr_v4 netmask;
     struct ip_addr_v4 gw;
 };
+#endif
 #endif
 
 #endif // __IPV4_ADDR_H

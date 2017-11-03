@@ -2220,7 +2220,7 @@
  * LWIP_IPV6==1: Enable IPv6
  */
 #if !defined LWIP_IPV6 || defined __DOXYGEN__
-#define LWIP_IPV6                       0
+#define LWIP_IPV6                       1
 #endif
 
 /**

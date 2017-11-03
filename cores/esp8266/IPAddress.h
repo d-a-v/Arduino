@@ -31,14 +31,14 @@ class IPAddress: public Printable {
         union {
                 uint8_t bytes[4];  // IPv4 address
                 uint32_t dword;
-        } _address;
+        } _address[4];
 
         // Access the raw byte array containing the address.  Because this returns a pointer
         // to the internal structure rather than a copy of the address this function should only
         // be used when you know that the usage of the returned uint8_t* will be transient and not
         // stored.
         uint8_t* raw_address() {
-            return _address.bytes;
+            return (uint8_t*)(void*)_address;
         }
 
     public:
@@ -48,28 +48,31 @@ class IPAddress: public Printable {
         IPAddress(uint32_t address);
         IPAddress(const uint8_t *address);
 
+        // could be cached:
+        bool isV4 () { return _address[1].dword == 0 && _address[2].dword == 0 && _address[3].dword == 0; }
+
         bool fromString(const char *address);
         bool fromString(const String &address) { return fromString(address.c_str()); }
 
         // Overloaded cast operator to allow IPAddress objects to be used where a pointer
         // to a four-byte uint8_t array is expected
         operator uint32_t() const {
-            return _address.dword;
+            return _address[0].dword;
         }
         bool operator==(const IPAddress& addr) const {
-            return _address.dword == addr._address.dword;
+            return memcmp(_address, addr._address, sizeof(_address)) == 0);
         }
         bool operator==(uint32_t addr) const {
-            return _address.dword == addr;
+            return isV4() && _address[0].dword == addr;
         }
         bool operator==(const uint8_t* addr) const;
 
         // Overloaded index operator to allow getting and setting individual octets of the address
         uint8_t operator[](int index) const {
-            return _address.bytes[index];
+            return _address[0].bytes[index];
         }
         uint8_t& operator[](int index) {
-            return _address.bytes[index];
+            return _address[0].bytes[index];
         }
 
         // Overloaded copy operators to allow initialisation of IPAddress objects from other types
