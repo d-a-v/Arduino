@@ -35,8 +35,8 @@ extern struct tm* sntp_localtime(const time_t *clock);
 // time gap in seconds from 01.01.1900 (NTP time) to 01.01.1970 (UNIX time)
 #define DIFF1900TO1970 2208988800UL
 
-static int s_daylightOffset_sec = 0;
-static long s_timezone_sec = 0;
+//static int s_daylightOffset_sec = 0;
+//static long s_timezone_sec = 0;
 static time_t s_bootTime = 0;
 
 // calculate offset used in gettimeofday
@@ -69,9 +69,10 @@ void configTime(int timezone, int daylightOffset_sec, const char* server1, const
     setServer(1, server2);
     setServer(2, server3);
 
-    s_timezone_sec = timezone;
-    s_daylightOffset_sec = daylightOffset_sec;
+    //s_timezone_sec = timezone;
+    //s_daylightOffset_sec = daylightOffset_sec;
     sntp_set_timezone(timezone/3600);
+    sntp_set_daylight(daylightOffset_sec);
     sntp_init();
 }
 
