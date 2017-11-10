@@ -34,6 +34,8 @@ public:
   ~WiFiClientSecure() override;
   WiFiClientSecure(const WiFiClientSecure&);
   WiFiClientSecure& operator=(const WiFiClientSecure&);
+  // Only called by WiFiServerSecure
+  WiFiClientSecure(ClientContext* client, bool usePMEM, const uint8_t *rsakey, int rsakeyLen, const uint8_t *cert, int certLen);
 
   int connect(IPAddress ip, uint16_t port) override;
   int connect(const char* name, uint16_t port) override;
@@ -43,6 +45,7 @@ public:
 
   uint8_t connected() override;
   size_t write(const uint8_t *buf, size_t size) override;
+  size_t write_P(PGM_P buf, size_t size) override;
   int read(uint8_t *buf, size_t size) override;
   int available() override;
   int read() override;
