@@ -31,6 +31,15 @@
 import sys
 import collections
 
+# serial upload speed order in menu
+# default is s115 for every board unless specified with 'serial' in board
+
+s57  = [ 's57', 's9', 's115', 's256', 's230', 's460', 's512', 's921' ]
+s115 = [ 's115', 's9', 's57', 's256', 's230', 's460', 's512', 's921' ]
+s921 = [ 's921', 's9', 's57', 's115', 's256', 's230', 's460', 's512' ]
+
+# boards list
+
 boards = collections.OrderedDict([
     ( 'generic', {
         'name': 'Generic ESP8266 Module',
@@ -211,6 +220,7 @@ boards = collections.OrderedDict([
             'flashfreq_40',
             '4M',
             ],
+        'serial': s57,
     }),
     ( 'd1_mini', {
         'name': 'WeMos D1 R2 & mini',
@@ -224,6 +234,7 @@ boards = collections.OrderedDict([
             'flashfreq_40',
             '4M',
             ],
+        'serial': s921,
     }),
     ( 'd1_mini_pro', {
         'name': 'WeMos D1 mini Pro',
@@ -238,6 +249,7 @@ boards = collections.OrderedDict([
             '16M',
             '4M',
             ],
+        'serial': s921,
     }),
     ( 'd1_mini_lite', {
         'name': 'Wemos D1 mini lite',
@@ -251,6 +263,7 @@ boards = collections.OrderedDict([
             'flashfreq_40',
             '1M',
             ],
+        'serial': s921,
     }),
     ( 'd1', {
         'name': 'WeMos D1 R1',
@@ -264,6 +277,7 @@ boards = collections.OrderedDict([
             'flashfreq_40',
             '4M',
             ],
+        'serial': s921,
     }),
     ( 'espino', {
         'name': 'ESPino (ESP-12 Module)',
@@ -368,6 +382,7 @@ boards = collections.OrderedDict([
             'flashfreq_40',
             '4M',
             ],
+        'serial': s921,
     }),
     ])
 
@@ -489,20 +504,47 @@ macros = {
         ( '.menu.LwIPVariant.OpenSource.build.lwip_flags', '-DLWIP_OPEN_SRC' ),
         ( '.menu.LwIPVariant.OpenSource.recipe.hooks.sketch.prebuild.1.pattern', 'make -C "{runtime.platform.path}/tools/sdk/lwip/src" install TOOLS_PATH="{runtime.tools.xtensa-lx106-elf-gcc.path}/bin/xtensa-lx106-elf-"' ),
         ]),
+
+    ####################### serial
+
+    's9': collections.OrderedDict([
+        ( '.menu.UploadSpeed.9600', '9600' ),
+        ( '.menu.UploadSpeed.9600.upload.speed', '9600' ),
+        ]),
+    's57': collections.OrderedDict([
+        ( '.menu.UploadSpeed.57600', '57600' ),
+        ( '.menu.UploadSpeed.57600.upload.speed', '57600' ),
+        ]),
+    's115': collections.OrderedDict([
+        ( '.menu.UploadSpeed.115200', '115200' ),
+        ( '.menu.UploadSpeed.115200.upload.speed', '115200' ),
+        ]),
+    's256': collections.OrderedDict([
+        ( '.menu.UploadSpeed.256000.windows', '256000' ),
+        ( '.menu.UploadSpeed.256000.windows.upload.speed', '256000' ),
+        ]),
+    's230': collections.OrderedDict([
+        ( '.menu.UploadSpeed.230400.linux', '230400' ),
+        ( '.menu.UploadSpeed.230400.linux.upload.speed', '230400' ),
+        ( '.menu.UploadSpeed.230400.macosx', '230400' ),
+        ( '.menu.UploadSpeed.230400.macosx.upload.speed', '230400' ),
+        ]),
+    's460': collections.OrderedDict([
+        ( '.menu.UploadSpeed.460800.linux', '460800' ),
+        ( '.menu.UploadSpeed.460800.linux.upload.speed', '460800' ),
+        ( '.menu.UploadSpeed.460800.macosx', '460800' ),
+        ( '.menu.UploadSpeed.460800.macosx.upload.speed', '460800' ),
+        ]),
+    's512': collections.OrderedDict([
+        ( '.menu.UploadSpeed.512000.windows', '512000' ),
+        ( '.menu.UploadSpeed.512000.windows.upload.speed', '512000' ),
+        ]),
+    's921': collections.OrderedDict([
+        ( '.menu.UploadSpeed.921600', '921600' ),
+        ( '.menu.UploadSpeed.921600.upload.speed', '921600' ),
+        ]),
+
     }
-
-################################################################
-
-uploadspeed = [
-        { 'speed': 115200,    'os': [ '' ] }, 
-        { 'speed': 9600,    'os': [ '' ] },
-        { 'speed': 57600,    'os': [ '' ] },
-        { 'speed': 256000,    'os': [ '.windows' ] },
-        { 'speed': 230400,    'os': [ '.linux', '.macosx' ] },
-        { 'speed': 460800,    'os': [ '.linux', '.macosx' ] },
-        { 'speed': 512000,    'os': [ '.windows' ] },
-        { 'speed': 921600,    'os': [ '' ] },
-        ]
 
 ################################################################
 ################################################################
@@ -664,16 +706,15 @@ for id in boards:
     else:
         macrolist += [ 'lwip', 'lwip2' ]
     macrolist += [ 'debug_menu', ]
+
+    if 'serial' in board:
+        macrolist += board['serial']
+    else:
+        macrolist += s115
+
     for block in macrolist:
         for optname in macros[block]:
             if not ('opts' in board) or not (optname in board['opts']):
                 print id + optname + '=' + macros[block][optname]
 
-    # serial speed                    
-    for uspeed in uploadspeed:
-        for os in uspeed['os']:
-            speed = uspeed['speed']
-            print id + '.menu.UploadSpeed.' + str(speed) + os + '=' + str(speed)
-            print id + '.menu.UploadSpeed.' + str(speed) + os + '.upload.speed=' + str(speed)
-    
     print ''
