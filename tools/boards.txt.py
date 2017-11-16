@@ -493,13 +493,13 @@ macros = {
         ]),
 
     'lwip': collections.OrderedDict([
-        ( '.menu.LwIPVariant.Prebuilt', 'Prebuilt Source (gcc)' ),
+        ( '.menu.LwIPVariant.Prebuilt', 'v1.4 Prebuilt (gcc)' ),
         ( '.menu.LwIPVariant.Prebuilt.build.lwip_lib', '-llwip_gcc' ),
         ( '.menu.LwIPVariant.Prebuilt.build.lwip_flags', '-DLWIP_OPEN_SRC' ),
-        ( '.menu.LwIPVariant.Espressif', 'Espressif (xcc)' ),
+        ( '.menu.LwIPVariant.Espressif', 'v1.4 Espressif (xcc)' ),
         ( '.menu.LwIPVariant.Espressif.build.lwip_lib', '-llwip' ),
         ( '.menu.LwIPVariant.Espressif.build.lwip_flags', '-DLWIP_MAYBE_XCC' ),
-        ( '.menu.LwIPVariant.OpenSource', 'Open Source (gcc)' ),
+        ( '.menu.LwIPVariant.OpenSource', 'v1.4 Open Source (gcc)' ),
         ( '.menu.LwIPVariant.OpenSource.build.lwip_lib', '-llwip_src' ),
         ( '.menu.LwIPVariant.OpenSource.build.lwip_flags', '-DLWIP_OPEN_SRC' ),
         ( '.menu.LwIPVariant.OpenSource.recipe.hooks.sketch.prebuild.1.pattern', 'make -C "{runtime.platform.path}/tools/sdk/lwip/src" install TOOLS_PATH="{runtime.tools.xtensa-lx106-elf-gcc.path}/bin/xtensa-lx106-elf-"' ),
