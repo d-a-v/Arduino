@@ -30,13 +30,22 @@
 
 import sys
 import collections
+import getopt
 
 # serial upload speed order in menu
-# default is s115 for every board unless specified with 'serial' in board
+# default is 115 for every board unless specified with 'serial' in board
+# or by user command line
 
-s57  = [ 's57', 's9', 's115', 's256', 's230', 's460', 's512', 's921' ]
-s115 = [ 's115', 's9', 's57', 's256', 's230', 's460', 's512', 's921' ]
-s921 = [ 's921', 's9', 's57', 's115', 's256', 's230', 's460', 's512' ]
+speeds = collections.OrderedDict([
+    (   '9', [ 's9', 's57', 's115', 's230', 's256', 's460', 's512', 's921' ]),
+    (  '57', [ 's57', 's9', 's115', 's230', 's256', 's460', 's512', 's921' ]),
+    ( '115', [ 's115', 's9', 's57', 's230', 's256', 's460', 's512', 's921' ]),
+    ( '230', [ 's230', 's9', 's57', 's115', 's256', 's460', 's512', 's921' ]),
+    ( '256', [ 's256', 's9', 's57', 's115', 's230', 's460', 's512', 's921' ]),
+    ( '460', [ 's460', 's9', 's57', 's115', 's230', 's256', 's512', 's921' ]),
+    ( '512', [ 's512', 's9', 's57', 's115', 's230', 's256', 's460', 's921' ]),
+    ( '921', [ 's921', 's9', 's57', 's115', 's230', 's256', 's460', 's512' ]),
+    ])
 
 # boards list
 
@@ -220,7 +229,7 @@ boards = collections.OrderedDict([
             'flashfreq_40',
             '4M',
             ],
-        'serial': s57,
+        'serial': '57',
     }),
     ( 'd1_mini', {
         'name': 'WeMos D1 R2 & mini',
@@ -234,7 +243,7 @@ boards = collections.OrderedDict([
             'flashfreq_40',
             '4M',
             ],
-        'serial': s921,
+        'serial': '921',
     }),
     ( 'd1_mini_pro', {
         'name': 'WeMos D1 mini Pro',
@@ -249,7 +258,7 @@ boards = collections.OrderedDict([
             '16M',
             '4M',
             ],
-        'serial': s921,
+        'serial': '921',
     }),
     ( 'd1_mini_lite', {
         'name': 'Wemos D1 mini lite',
@@ -263,7 +272,7 @@ boards = collections.OrderedDict([
             'flashfreq_40',
             '1M',
             ],
-        'serial': s921,
+        'serial': '921',
     }),
     ( 'd1', {
         'name': 'WeMos D1 R1',
@@ -277,7 +286,7 @@ boards = collections.OrderedDict([
             'flashfreq_40',
             '4M',
             ],
-        'serial': s921,
+        'serial': '921',
     }),
     ( 'espino', {
         'name': 'ESPino (ESP-12 Module)',
@@ -382,7 +391,7 @@ boards = collections.OrderedDict([
             'flashfreq_40',
             '4M',
             ],
-        'serial': s921,
+        'serial': '921',
     }),
     ])
 
@@ -652,25 +661,81 @@ def all_flash_size ():
         }
 
 ################################################################
+
+def usage (name,ret):
+    print ""
+    print "boards.txt generator for esp8266/Arduino"
+    print ""
+    print "usage: %s [options]" % name
+    print "	-h, --help	- "
+    print "	--lwip		- preferred default lwIP version (default %d)" % lwip
+    print "	--speed	s	- change default serial speed for subsequent board in options"
+    print "	--board b	- "
+    print ""
+
+    out = ""
+    for s in speeds:
+        out += s + ' '
+    print "available speed options:", out
+
+    out = ""
+    for b in boards:
+        out += b + '('
+        if 'serial' in boards[b]:
+            out += boards[b]['serial']
+        else:
+            out += '115'
+        out += ') '
+    print "available board names:", out
+
+    sys.exit(ret)
+
+################################################################
 ################################################################
 # entry point
 
-if len(sys.argv) > 1 and sys.argv[1] == "lwip1":
-    lwip2_first = 0
-elif len(sys.argv) > 1 and sys.argv[1] == "lwip2":
-    lwip2_first = 1
-else:
-    print ""
-    print "Please give 'lwip1' or 'lwip2' as first argument"
-    print "This will be the default in the generated file"
-    print ""
-    exit(1)
+lwip = 2
+
+try:
+    opts, args = getopt.getopt(sys.argv[1:], "h", ["help", "lwip=", "speed=", "board="])
+except getopt.GetoptError as err:
+    print str(err)  # will print something like "option -a not recognized"
+    usage(sys.argv[0], 1)
+
+nospeed = '(not set)'
+speed = nospeed
+for o, a in opts:
+
+   if o in ("-h", "--help"):
+        usage(sys.argv[0], 0)
+
+   elif o in ("--lwip"):
+        lwip = a
+
+   elif o in ("--speed"):
+        if not speed == nospeed:
+            print "--speed: already set"
+            usage(sys.argv[0], 1);
+        speed = a
+
+   elif o in ("--board"):
+        if not speed in speeds:
+            print "speed %s not available" % speed
+            usage(sys.argv[0], 1)
+        if not a in boards:
+            print "board %s not available" % a
+            usage(sys.argv[0], 1)
+        boards[a]['serial'] = speed
+        speed = nospeed
+
+   else:
+        assert False, "unhandled option"
 
 macros.update(all_flash_size())
 macros.update(all_debug())
 
 print '#'
-print '# this file is script-generated and is likely to be overwritten'
+print '# this file is script-generated and is likely to be overwritten by ' + sys.argv[0]
 print '#'
 print ''
 print 'menu.BoardModel=Model'
@@ -701,16 +766,16 @@ for id in boards:
     macrolist = [ 'defaults', 'cpufreq_menu', ]
     if 'macro' in board:
         macrolist += board['macro']
-    if lwip2_first:
+    if lwip == 2:
         macrolist += [ 'lwip2', 'lwip' ]
     else:
         macrolist += [ 'lwip', 'lwip2' ]
     macrolist += [ 'debug_menu', ]
 
     if 'serial' in board:
-        macrolist += board['serial']
+        macrolist += speeds[board['serial']]
     else:
-        macrolist += s115
+        macrolist += speeds['115']
 
     for block in macrolist:
         for optname in macros[block]:
