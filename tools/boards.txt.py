@@ -667,16 +667,17 @@ def usage (name,ret):
     print "boards.txt generator for esp8266/Arduino"
     print ""
     print "usage: %s [options]" % name
+    print ""
     print "	-h, --help	- "
     print "	--lwip		- preferred default lwIP version (default %d)" % lwip
-    print "	--speed	s	- change default serial speed for subsequent board in options"
-    print "	--board b	- "
+    print "	--speed	s	- change default serial speed for subsequent board"
+    print "	--board b	- board to change option with"
     print ""
 
     out = ""
     for s in speeds:
         out += s + ' '
-    print "available speed options:", out
+    print "available serial speed options (kbps):", out
 
     out = ""
     for b in boards:
@@ -684,8 +685,8 @@ def usage (name,ret):
         if 'serial' in boards[b]:
             out += boards[b]['serial']
         else:
-            out += '115'
-        out += ') '
+            out += default_speed
+        out += 'k) '
     print "available board names:", out
 
     sys.exit(ret)
@@ -695,6 +696,7 @@ def usage (name,ret):
 # entry point
 
 lwip = 2
+default_speed = '115'
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "h", ["help", "lwip=", "speed=", "board="])
@@ -775,7 +777,7 @@ for id in boards:
     if 'serial' in board:
         macrolist += speeds[board['serial']]
     else:
-        macrolist += speeds['115']
+        macrolist += speeds[default_speed]
 
     for block in macrolist:
         for optname in macros[block]:
