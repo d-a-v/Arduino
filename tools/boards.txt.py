@@ -666,10 +666,10 @@ def usage (name,ret):
     print ""
     print "usage: %s [options]" % name
     print ""
-    print "	-h, --help	- "
-    print "	--lwip		- preferred default lwIP version (default %d)" % lwip
-    print "	--speed	s	- change default serial speed for subsequent board"
-    print "	--board b	- board to change option with"
+    print "	-h, --help"
+    print "	--lwip			- preferred default lwIP version (default %d)" % lwip
+    print "	--board b		- board to modify:"
+    print "		--speed	s	- change default serial speed"
     print ""
 
     out = ""
@@ -702,33 +702,33 @@ except getopt.GetoptError as err:
     print str(err)  # will print something like "option -a not recognized"
     usage(sys.argv[0], 1)
 
-nospeed = '(not set)'
-speed = nospeed
+no = '(not set)'
+board = no
+
 for o, a in opts:
 
-   if o in ("-h", "--help"):
+    if o in ("-h", "--help"):
         usage(sys.argv[0], 0)
 
-   elif o in ("--lwip"):
+    elif o in ("--lwip"):
         lwip = a
 
-   elif o in ("--speed"):
-        if not speed == nospeed:
-            print "--speed: already set"
-            usage(sys.argv[0], 1);
-        speed = a
-
-   elif o in ("--board"):
-        if not speed in speeds:
-            print "speed %s not available" % speed
-            usage(sys.argv[0], 1)
+    elif o in ("--board"):
         if not a in boards:
             print "board %s not available" % a
             usage(sys.argv[0], 1)
-        boards[a]['serial'] = speed
-        speed = nospeed
+        board = a
 
-   else:
+    elif o in ("--speed"):
+        if board == no:
+            print "board not set"
+            usage(sys.argv[0], 1)
+        if not a in speeds:
+            print "speed %s not available" % a
+            usage(sys.argv[0], 1)
+        boards[board]['serial'] = a
+
+    else:
         assert False, "unhandled option"
 
 macros.update(all_flash_size())
