@@ -530,23 +530,21 @@ macros = {
         ]),
     's256': collections.OrderedDict([
         ( '.menu.UploadSpeed.256000.windows', '256000' ),
-        ( '.menu.UploadSpeed.256000.windows.upload.speed', '256000' ),
+        ( '.menu.UploadSpeed.256000.upload.speed', '256000' ),
         ]),
     's230': collections.OrderedDict([
         ( '.menu.UploadSpeed.230400.linux', '230400' ),
-        ( '.menu.UploadSpeed.230400.linux.upload.speed', '230400' ),
         ( '.menu.UploadSpeed.230400.macosx', '230400' ),
-        ( '.menu.UploadSpeed.230400.macosx.upload.speed', '230400' ),
+        ( '.menu.UploadSpeed.230400.upload.speed', '230400' ),
         ]),
     's460': collections.OrderedDict([
         ( '.menu.UploadSpeed.460800.linux', '460800' ),
-        ( '.menu.UploadSpeed.460800.linux.upload.speed', '460800' ),
         ( '.menu.UploadSpeed.460800.macosx', '460800' ),
-        ( '.menu.UploadSpeed.460800.macosx.upload.speed', '460800' ),
+        ( '.menu.UploadSpeed.460800.upload.speed', '460800' ),
         ]),
     's512': collections.OrderedDict([
         ( '.menu.UploadSpeed.512000.windows', '512000' ),
-        ( '.menu.UploadSpeed.512000.windows.upload.speed', '512000' ),
+        ( '.menu.UploadSpeed.512000.upload.speed', '512000' ),
         ]),
     's921': collections.OrderedDict([
         ( '.menu.UploadSpeed.921600', '921600' ),
