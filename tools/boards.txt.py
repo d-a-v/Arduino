@@ -234,7 +234,7 @@ boards = collections.OrderedDict([
     ( 'd1_mini', {
         'name': 'WeMos D1 R2 & mini',
         'opts': {
-            '.build.board': 'ESP8266_WEMOS_D1R2MINI',
+            '.build.board': 'ESP8266_WEMOS_D1MINI',
             '.build.variant': 'd1_mini',
             },
         'macro': [
@@ -256,12 +256,11 @@ boards = collections.OrderedDict([
             'flashmode_dio',
             'flashfreq_40',
             '16M',
-            '4M',
             ],
         'serial': '921',
     }),
     ( 'd1_mini_lite', {
-        'name': 'Wemos D1 mini lite',
+        'name': 'Wemos D1 mini Lite',
         'opts': {
             '.build.board': 'ESP8266_WEMOS_D1MINILITE',
             '.build.variant': 'd1_mini',
@@ -277,7 +276,7 @@ boards = collections.OrderedDict([
     ( 'd1', {
         'name': 'WeMos D1 R1',
         'opts': {
-            '.build.board': 'ESP8266_WEMOS_D1R1',
+            '.build.board': 'ESP8266_WEMOS_D1MINI',
             '.build.variant': 'd1',
             },
         'macro': [
