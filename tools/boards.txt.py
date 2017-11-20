@@ -61,6 +61,7 @@ boards = collections.OrderedDict([
             'flashfreq_menu',
             'flashmode_menu',
             '512K', '1M', '2M', '4M', '8M', '16M',
+            'led',
             ],
     }),
     ( 'esp8285', {
@@ -74,6 +75,7 @@ boards = collections.OrderedDict([
             'flashmode_dout',
             'flashfreq_40',
             '1M',
+            'led',
             ],
     }),
     ( 'espduino', {
@@ -399,7 +401,6 @@ boards = collections.OrderedDict([
 macros = {
     'defaults': collections.OrderedDict([
         ( '.upload.tool', 'esptool' ),
-        ( '.upload.speed', '115200' ),
         ( '.upload.maximum_data_size', '81920' ),
         ( '.upload.wait_for_upload_port', 'true' ),
         ( '.serial.disableDTR', 'true' ),
@@ -553,8 +554,10 @@ macros = {
     }
 
 ################################################################
-################################################################
 # defs
+
+################################################################
+# debug options
 
 # https://rosettacode.org/wiki/Combinations#Python
 def comb (m, lst):
@@ -613,6 +616,9 @@ def all_debug ():
             ]))
     return { 'debug_menu': debugmenu }
 
+################################################################
+# flash size
+
 def flash_size (display, optname, ld, desc, max_upload_size, spiffs_start = 0, spiffs_size = 0, spiffs_blocksize = 0):
     menu = '.menu.FlashSize.' + optname
     menub = menu + '.build.'
@@ -658,6 +664,24 @@ def all_flash_size ():
         }
 
 ################################################################
+# builtin led
+
+def led (default,max):
+    led = collections.OrderedDict([
+                ('.menu.led.' + str(default), str(default)),
+                ('.menu.led.' + str(default) + '.build.led', '-DUSERLED=' + str(default)),
+          ]);
+    for i in range(0,max):
+        if not i == default:
+            led.update(
+                collections.OrderedDict([
+                    ('.menu.led.' + str(i), str(i)),
+                    ('.menu.led.' + str(i) + '.build.led', '-DUSERLED=' + str(i)),
+                ]))
+    return { 'led': led }
+
+################################################################
+# help / usage
 
 def usage (name,ret):
     print ""
@@ -667,6 +691,7 @@ def usage (name,ret):
     print ""
     print "	-h, --help"
     print "	--lwip			- preferred default lwIP version (default %d)" % lwip
+    print "	--led			- preferred default builtin led for generic boards (default %d)" % led_default
     print "	--board b		- board to modify:"
     print "		--speed	s	- change default serial speed"
     print ""
@@ -694,9 +719,11 @@ def usage (name,ret):
 
 lwip = 2
 default_speed = '115'
+led_default = 2
+led_max = 16
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "h", ["help", "lwip=", "speed=", "board="])
+    opts, args = getopt.getopt(sys.argv[1:], "h", ["help", "lwip=", "led=", "speed=", "board="])
 except getopt.GetoptError as err:
     print str(err)  # will print something like "option -a not recognized"
     usage(sys.argv[0], 1)
@@ -711,6 +738,9 @@ for o, a in opts:
 
     elif o in ("--lwip"):
         lwip = a
+    
+    elif o in ("--led"):
+        led_default = int(a)
 
     elif o in ("--board"):
         if not a in boards:
@@ -732,6 +762,7 @@ for o, a in opts:
 
 macros.update(all_flash_size())
 macros.update(all_debug())
+macros.update(led(led_default, led_max))
 
 print '#'
 print '# this file is script-generated and is likely to be overwritten by ' + sys.argv[0]
@@ -749,6 +780,7 @@ print 'menu.ESPModule=Module'
 print 'menu.Debug=Debug port'
 print 'menu.DebugLevel=Debug Level'
 print 'menu.LwIPVariant=lwIP Variant'
+print 'menu.led=Builtin Led'
 print ''
 
 for id in boards:
