@@ -588,7 +588,8 @@ def comb1 (lst):
 def all_debug ():
     listcomb = [ 'SSL', 'TLS_MEM', 'HTTP_CLIENT', 'HTTP_SERVER' ]
     listnocomb = [ 'CORE', 'WIFI', 'HTTP_UPDATE', 'UPDATER', 'OTA' ]
-    listnocomb += [ 'NULL -include "umm_malloc/umm_malloc_cfg.h"' ]
+    if not premerge:
+        listnocomb += [ 'NULL -include "umm_malloc/umm_malloc_cfg.h"' ]
     options = combn(listcomb)
     options += comb1(listnocomb)
     options += [ listcomb + listnocomb ]
@@ -702,6 +703,7 @@ def usage (name,ret):
     print "	--led			- preferred default builtin led for generic boards (default %d)" % led_default
     print "	--board b		- board to modify:"
     print "		--speed	s	- change default serial speed"
+    print "	--premerge		- no NULL debug option, no led menu"
     print ""
 
     out = ""
@@ -729,9 +731,10 @@ lwip = 2
 default_speed = '115'
 led_default = 2
 led_max = 16
+premerge = False
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "h", ["help", "lwip=", "led=", "speed=", "board="])
+    opts, args = getopt.getopt(sys.argv[1:], "h", ["help", "premerge", "lwip=", "led=", "speed=", "board="])
 except getopt.GetoptError as err:
     print str(err)  # will print something like "option -a not recognized"
     usage(sys.argv[0], 1)
@@ -743,6 +746,9 @@ for o, a in opts:
 
     if o in ("-h", "--help"):
         usage(sys.argv[0], 0)
+    
+    elif o in ("--premerge"):
+        premerge = True
 
     elif o in ("--lwip"):
         lwip = a
@@ -770,7 +776,10 @@ for o, a in opts:
 
 macros.update(all_flash_size())
 macros.update(all_debug())
-macros.update(led(led_default, led_max))
+if premerge:
+    macros.update({ 'led': { } })
+else:
+    macros.update(led(led_default, led_max))
 
 print '#'
 print '# this file is script-generated and is likely to be overwritten by ' + sys.argv[0]
