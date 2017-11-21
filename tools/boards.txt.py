@@ -83,9 +83,17 @@ boards = collections.OrderedDict([
         'opts': {
             '.build.board': 'ESP8266_ESP13',
             '.build.variant': 'ESPDuino',
+            '.menu.ResetMethod.ck': 'ESPduino-V1',
+            '.menu.ResetMethod.ck.upload.resetmethod': 'nodemcu',
+            '.menu.ResetMethod.ESPduino': 'ESPduino-V2',
+            '.menu.ResetMethod.ESPduino.upload.resetmethod': 'nodemcu',
+            '.menu.UploadTool.esptool': 'Serial',
+            '.menu.UploadTool.esptool.upload.tool': 'esptool',
+            '.menu.UploadTool.esptool.upload.verbose': '-vv',
+            '.menu.UploadTool.espota': 'OTA',
+            '.menu.UploadTool.espota.upload.tool': 'espota',
             },
         'macro': [
-            'resetmethod_ck',
             'flashmode_dio',
             'flashfreq_40',
             '4M',
