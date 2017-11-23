@@ -9,12 +9,16 @@
   TZ and DST below have to be manually set
   according to your local settings.
 
+  Demo of settimeofday_cb() + sntp_force_request()
+  in NTP mode
+
   This example code is in the public domain.
 */
 
 #include <time.h>                       // time() ctime()
 #include <sys/time.h>                   // struct timeval
 #include <ESP8266WiFi.h>
+#include <coredecls.h>			// settimeofday_cb() / sntp_force_request()
 
 ////////////////////////////////////////////////////////
 
@@ -32,8 +36,14 @@
 #define TZ_SEC          ((TZ)*3600)
 #define DST_SEC         ((DST_MN)*60)
 
+void time_is_set (void)
+{
+  Serial.println("------------------ settimeofday() was called ------------------");
+}
+
 void setup() {
   Serial.begin(115200);
+  settimeofday_cb(time_is_set);
 
 #if NTP0_OR_LOCAL1
   // local
@@ -72,6 +82,7 @@ timeval tv;
 timespec tp;
 time_t now;
 uint32_t now_ms, now_us;
+int loop_count = 0;
 
 void loop() {
 
@@ -122,6 +133,42 @@ void loop() {
   Serial.print((uint32_t)(TZ * 60 + DST_MN));
   Serial.print("mn)");
   Serial.print(ctime(&now));
+
+#if !NTP0_OR_LOCAL1
+  // sntp_force_request() demo
+
+  if (++loop_count == 100) // 100=>10secs
+  {
+    WiFi.disconnect();
+    WiFi.mode(WIFI_OFF);
+    Serial.println("------------------ WIFI OFF ------------------");
+  }
+
+  if (loop_count == 130) // 130=>13secs
+  {
+    Serial.println("------------------ WIFI ON ------------------");
+    Serial.print("connected:");
+    Serial.println(WiFi.status() == WL_CONNECTED);
+    WiFi.mode(WIFI_STA);
+    Serial.print("connected2:");
+    Serial.println(WiFi.status() == WL_CONNECTED);
+    WiFi.begin(SSID, SSIDPWD);
+    while (WiFi.status() != WL_CONNECTED)
+    {
+      delay(500);
+      Serial.print(".");
+    }
+    Serial.println("reconnected");
+    timeval backtothefuture = { 0, 0 };
+    settimeofday(&backtothefuture, nullptr);
+    now = time(nullptr);
+    Serial.print("reset time: ");
+    Serial.println(now);
+    loop_count = 0;
+    sntp_force_request();
+  }
+
+#endif // NTP
 
   // simple drifting loop
   delay(100);

@@ -34,6 +34,7 @@
  * TODOs:
  * settimeofday(): handle tv->tv_usec
  * sntp_mktm_r(): review, fix DST handling (this one is currently untouched from lwip-1.4)
+ * implement adjtime()
  */
 
 #include <lwip/init.h>
@@ -41,6 +42,13 @@
 #include <osapi.h>
 #include <os_type.h>
 #include "coredecls.h"
+
+static void (*_settimeofday_cb)(void) = NULL;
+
+void settimeofday_cb (void (*cb)(void))
+{
+    _settimeofday_cb = cb;
+}
 
 #if LWIP_VERSION_MAJOR == 1
 
@@ -445,6 +453,9 @@ int settimeofday(const struct timeval* tv, const struct timezone* tz)
         
         // reset time subsystem
         s_bootTimeSet = false;
+
+        if (_settimeofday_cb)
+            _settimeofday_cb();
     }
     return 0;
 }
