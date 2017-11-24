@@ -644,8 +644,35 @@ def flash_size (display, optname, ld, desc, max_upload_size, spiffs_start = 0, s
             ( menub + 'spiffs_end', "0x%05X" % (spiffs_start + spiffs_size) ),
             ( menub + 'spiffs_blocksize', "%i" % spiffs_blocksize ),
             ]))
+
+    if ldgen:
+        if spiffs_size == 0:
+            page = 0
+            block = 0
+        elif spiffs_size < 0x80000:
+            page = 0x100
+            block = 0x1000
+        else:
+            page = 0x100
+            block = 0x2000
+        print "/* file %s */" % ld
+        print "/* Flash Split for %s chips */" % optname
+        print "MEMORY"
+        print "{"
+        print "  dport0_0_seg :                        org = 0x3FF00000, len = 0x10"
+        print "  dram0_0_seg :                         org = 0x3FFE8000, len = 0x14000"
+        print "  iram1_0_seg :                         org = 0x40100000, len = 0x8000"
+        print "  irom0_0_seg :                         org = 0x40201010, len = 0x%x" % max_upload_size
+        print "}"
+        print "PROVIDE ( _SPIFFS_start = 0x%08X );" % (0x40200000 + spiffs_start)
+        print "PROVIDE ( _SPIFFS_end = 0x%08X );" % (0x40200000 + spiffs_start + spiffs_size)
+        print "PROVIDE ( _SPIFFS_page = 0x%X );" % page
+        print "PROVIDE ( _SPIFFS_block = 0x%X );" % block
+        print ""
+        print 'INCLUDE "../ld/eagle.app.v6.common.ld"'
+
     return d
-        
+
 def all_flash_size ():
     f512 =      flash_size('512K', '512K0',   'eagle.flash.512k0.ld',     'no SPIFFS', 499696)
     f512.update(flash_size('512K', '512K64',  'eagle.flash.512k64.ld',   '64K SPIFFS', 434160,   0x6B000,   0x10000, 4096))
@@ -704,6 +731,7 @@ def usage (name,ret):
     print "	--board b		- board to modify:"
     print "		--speed	s	- change default serial speed"
     print "	--premerge		- no NULL debug option, no led menu"
+    print "	--ld			- WIP"
     print ""
 
     out = ""
@@ -732,9 +760,10 @@ default_speed = '115'
 led_default = 2
 led_max = 16
 premerge = False
+ldgen = False
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "h", ["help", "premerge", "lwip=", "led=", "speed=", "board="])
+    opts, args = getopt.getopt(sys.argv[1:], "h", ["help", "premerge", "ld", "lwip=", "led=", "speed=", "board="])
 except getopt.GetoptError as err:
     print str(err)  # will print something like "option -a not recognized"
     usage(sys.argv[0], 1)
@@ -749,6 +778,9 @@ for o, a in opts:
     
     elif o in ("--premerge"):
         premerge = True
+
+    elif o in ("--ld"):
+        ldgen = True
 
     elif o in ("--lwip"):
         lwip = a
@@ -773,6 +805,10 @@ for o, a in opts:
 
     else:
         assert False, "unhandled option"
+
+if ldgen:
+    all_flash_size()
+    sys.exit(0)
 
 macros.update(all_flash_size())
 macros.update(all_debug())
