@@ -732,6 +732,7 @@ def usage (name,ret):
     print "		--speed	s	- change default serial speed"
     print "	--premerge		- no NULL debug option, no led menu"
     print "	--ld			- WIP"
+    print "	--customspeed s		- new serial speed for all boards"
     print ""
 
     out = ""
@@ -761,9 +762,10 @@ led_default = 2
 led_max = 16
 premerge = False
 ldgen = False
+customspeeds = []
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "h", ["help", "premerge", "ld", "lwip=", "led=", "speed=", "board="])
+    opts, args = getopt.getopt(sys.argv[1:], "h", ["help", "premerge", "ld", "lwip=", "led=", "speed=", "board=", "customspeed="])
 except getopt.GetoptError as err:
     print str(err)  # will print something like "option -a not recognized"
     usage(sys.argv[0], 1)
@@ -787,6 +789,11 @@ for o, a in opts:
     
     elif o in ("--led"):
         led_default = int(a)
+
+    elif o in ("--customspeed"):
+        customspeeds += [
+            '.menu.UploadSpeed.' + a + '=' + a,
+            '.menu.UploadSpeed.' + a + '.upload.speed' + '=' + a ]
 
     elif o in ("--board"):
         if not a in boards:
@@ -855,6 +862,9 @@ for id in boards:
     else:
         macrolist += [ 'lwip', 'lwip2' ]
     macrolist += [ 'debug_menu', ]
+
+    for cs in customspeeds:
+        print id + cs
 
     if 'serial' in board:
         macrolist += speeds[board['serial']]
