@@ -1,3 +1,6 @@
 [submodule "lwip2"]
 	path = tools/sdk/lwip2/builder
 	url = https://github.com/d-a-v/esp82xx-nonos-linklayer.git
+[submodule "mbedtls"]
+	path = tools/sdk/mbedtls/builder
+	url = https://github.com/ARMmbed/mbedtls.git
