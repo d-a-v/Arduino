@@ -36,8 +36,13 @@
 #define TZ_SEC          ((TZ)*3600)
 #define DST_SEC         ((DST_MN)*60)
 
+timeval cbtime;			// time set in callback
+bool cbtime_set = false;
+
 void time_is_set (void)
 {
+  gettimeofday(&cbtime, NULL);
+  cbtime_set = true;
   Serial.println("------------------ settimeofday() was called ------------------");
 }
 
@@ -103,6 +108,17 @@ void loop() {
     Serial.println();
     Serial.println();
   }
+  
+  if (cbtime_set)
+  {
+    Serial.print("gettimeofday at time-is-set-callback:");
+    Serial.print((uint32_t)cbtime.tv_sec);
+    Serial.print("/");
+    Serial.print((uint32_t)cbtime.tv_usec);
+    Serial.println("us");
+    Serial.println();
+    cbtime_set = false;
+  }
 
   // time from boot
   Serial.print("clock:");
@@ -147,24 +163,24 @@ void loop() {
   if (loop_count == 130) // 130=>13secs
   {
     Serial.println("------------------ WIFI ON ------------------");
-    Serial.print("connected:");
-    Serial.println(WiFi.status() == WL_CONNECTED);
+
+    timeval backtothefuture = { 0, 0 };
+    settimeofday(&backtothefuture, nullptr);
+    now = time(nullptr);
+    Serial.print("reset time after settimeofday(0) (sec): ");
+    Serial.println(now);
+
     WiFi.mode(WIFI_STA);
-    Serial.print("connected2:");
-    Serial.println(WiFi.status() == WL_CONNECTED);
     WiFi.begin(SSID, SSIDPWD);
+    Serial.print("reconnecting.");
     while (WiFi.status() != WL_CONNECTED)
     {
       delay(500);
       Serial.print(".");
     }
     Serial.println("reconnected");
-    timeval backtothefuture = { 0, 0 };
-    settimeofday(&backtothefuture, nullptr);
-    now = time(nullptr);
-    Serial.print("reset time: ");
-    Serial.println(now);
     loop_count = 0;
+
     sntp_force_request();
   }
 

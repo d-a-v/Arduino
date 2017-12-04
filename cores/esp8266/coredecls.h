@@ -6,10 +6,11 @@
 extern "C" {
 #endif
 
-extern bool s_bootTimeSet;
-
 // TODO: put declarations here, get rid of -Wno-implicit-function-declaration
 
+extern bool timeshift64_is_set;
+
+void tune_timeshift64 (uint64_t now_us);
 void sntp_force_request (void);
 void settimeofday_cb (void (*cb)(void));
 
