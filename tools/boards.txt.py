@@ -505,7 +505,7 @@ macros = {
     ####################### lwip
 
     'lwip2': collections.OrderedDict([
-        ( '.menu.LwIPVariant.open', 'v2' ),
+        ( '.menu.LwIPVariant.open', 'v2 Prebuilt (gcc)' ),
         ( '.menu.LwIPVariant.open.build.lwip_include', 'lwip2/include' ),
         ( '.menu.LwIPVariant.open.build.lwip_lib', '-llwip2' ),
         ]),
