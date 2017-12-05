@@ -28,6 +28,7 @@
 #            512K/1M/2M/4M/8M/16M:       menus for flash & SPIFFS size
 #            lwip/lwip2                  menus for available lwip versions
 
+import os
 import sys
 import collections
 import getopt
@@ -731,8 +732,12 @@ def usage (name,ret):
     print "	--board b		- board to modify:"
     print "		--speed	s	- change default serial speed"
     print "	--premerge		- no NULL debug option, no led menu"
-    print "	--ld			- WIP"
     print "	--customspeed s		- new serial speed for all boards"
+    print ""
+    print "	--boardsshow"
+    print "	--boardsgen"
+    print "	--ldshow"
+    print "	--ldgen"
     print ""
 
     out = ""
@@ -750,6 +755,8 @@ def usage (name,ret):
         out += 'k) '
     print "available board names:", out
 
+    print ""
+
     sys.exit(ret)
 
 ################################################################
@@ -762,10 +769,17 @@ led_default = 2
 led_max = 16
 premerge = False
 ldgen = False
+ldshow = False
+boardsgen = False
+boardsshow = False
 customspeeds = []
 
+#### vvvv cmdline parsing starts
+
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "h", ["help", "premerge", "ld", "lwip=", "led=", "speed=", "board=", "customspeed="])
+    opts, args = getopt.getopt(sys.argv[1:], "h",
+        [ "help", "premerge", "lwip=", "led=", "speed=", "board=", "customspeed=",
+          "ldshow", "ldgen", "boardsshow", "boardsgen" ])
 except getopt.GetoptError as err:
     print str(err)  # will print something like "option -a not recognized"
     usage(sys.argv[0], 1)
@@ -780,9 +794,6 @@ for o, a in opts:
     
     elif o in ("--premerge"):
         premerge = True
-
-    elif o in ("--ld"):
-        ldgen = True
 
     elif o in ("--lwip"):
         lwip = a
@@ -810,12 +821,46 @@ for o, a in opts:
             usage(sys.argv[0], 1)
         boards[board]['serial'] = a
 
+    elif o in ("--ldshow"):
+        ldshow = True
+
+    elif o in ("--ldgen"):
+        ldshow = True
+        ldgen = True
+
+    elif o in ("--boardsshow"):
+        boardsshow = True
+
+    elif o in ("--boardsgen"):
+        boardsshow = True
+        boardsgen = True
+
     else:
         assert False, "unhandled option"
 
-if ldgen:
+#### ^^^^ cmdline parsing ends
+
+if ldshow:
     all_flash_size()
+
+if not boardsshow:
+    if not ldshow:
+        usage(sys.argv[0], 0)
     sys.exit(0)
+
+# board show / gen
+
+if boardsgen:
+    # check if running in root
+    if not os.path.isfile("boards.txt"):
+        print "please run me from boards.txt directory"
+        sys.exit(1)
+
+    # check if backup already exists
+    if not os.path.isfile("boards.txt.orig"):
+        os.rename("boards.txt", "boards.txt.orig")
+
+    sys.stdout = open("boards.txt", 'w')
 
 macros.update(all_flash_size())
 macros.update(all_debug())
@@ -852,7 +897,7 @@ for id in boards:
     if 'opts' in board:
         for optname in board['opts']:
             print id + optname + '=' + board['opts'][optname]
-    
+
     # macros
     macrolist = [ 'defaults', 'cpufreq_menu', ]
     if 'macro' in board:
