@@ -646,7 +646,17 @@ def flash_size (display, optname, ld, desc, max_upload_size, spiffs_start = 0, s
             ( menub + 'spiffs_blocksize', "%i" % spiffs_blocksize ),
             ]))
 
-    if ldgen:
+    if ldshow:
+        if ldgen:
+            lddir = "tools/sdk/ld/"
+            ldbackupdir = lddir + "backup/"
+            if not os.path.isdir(ldbackupdir):
+                os.mkdir(ldbackupdir)
+            if not os.path.isfile(ldbackupdir + ld):
+                os.rename(lddir + ld, ldbackupdir + ld)
+	    realstdout = sys.stdout
+	    sys.stdout = open(lddir + ld, 'w')
+            
         if spiffs_size == 0:
             page = 0
             block = 0
@@ -671,6 +681,10 @@ def flash_size (display, optname, ld, desc, max_upload_size, spiffs_start = 0, s
         print "PROVIDE ( _SPIFFS_block = 0x%X );" % block
         print ""
         print 'INCLUDE "../ld/eagle.app.v6.common.ld"'
+        
+        if ldgen:
+            sys.stdout.close()
+            sys.stdout = realstdout
 
     return d
 
@@ -733,6 +747,8 @@ def usage (name,ret):
     print "		--speed	s	- change default serial speed"
     print "	--premerge		- no NULL debug option, no led menu"
     print "	--customspeed s		- new serial speed for all boards"
+    print ""
+    print "	mandatory option (at least one):"
     print ""
     print "	--boardsshow"
     print "	--boardsgen"
