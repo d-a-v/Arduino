@@ -13,6 +13,9 @@
 # touch it, bring it, pay it, watch it, turn it, leave it, start - format
 # it.
 
+# diff ldscripts after ldscripts regeneration:
+# (cd tools/sdk/ld/backup/; for i in *; do diff -u $i ../$i|less; done)
+
 # board descriptor:
 #    name     display name
 #    opts:    specific entries dicts (overrides same entry in macros)
@@ -732,6 +735,70 @@ def led (default,max):
     return { 'led': led }
 
 ################################################################
+
+def allboards ():
+    macros.update(all_flash_size())
+    macros.update(all_debug())
+    if premerge:
+        macros.update({ 'led': { } })
+    else:
+        macros.update(led(led_default, led_max))
+
+    print '#'
+    print '# this file is script-generated and is likely to be overwritten by ' + sys.argv[0]
+    print '#'
+    print ''
+    print 'menu.BoardModel=Model'
+    print 'menu.UploadSpeed=Upload Speed'
+    print 'menu.CpuFrequency=CPU Frequency'
+    print 'menu.CrystalFreq=Crystal Frequency'
+    print 'menu.FlashSize=Flash Size'
+    print 'menu.FlashMode=Flash Mode'
+    print 'menu.FlashFreq=Flash Frequency'
+    print 'menu.ResetMethod=Reset Method'
+    print 'menu.ESPModule=Module'
+    print 'menu.Debug=Debug port'
+    print 'menu.DebugLevel=Debug Level'
+    print 'menu.LwIPVariant=lwIP Variant'
+    print 'menu.led=Builtin Led'
+    print ''
+
+    for id in boards:
+        print '##############################################################'
+        board = boards[id]
+        print id + '.name=' + board['name']
+
+        # standalone options
+        if 'opts' in board:
+            for optname in board['opts']:
+                print id + optname + '=' + board['opts'][optname]
+
+        # macros
+        macrolist = [ 'defaults', 'cpufreq_menu', ]
+        if 'macro' in board:
+            macrolist += board['macro']
+        if lwip == 2:
+            macrolist += [ 'lwip2', 'lwip' ]
+        else:
+            macrolist += [ 'lwip', 'lwip2' ]
+        macrolist += [ 'debug_menu', ]
+
+        for cs in customspeeds:
+            print id + cs
+
+        if 'serial' in board:
+            macrolist += speeds[board['serial']]
+        else:
+            macrolist += speeds[default_speed]
+
+        for block in macrolist:
+            for optname in macros[block]:
+                if not ('opts' in board) or not (optname in board['opts']):
+                    print id + optname + '=' + macros[block][optname]
+
+        print ''
+
+################################################################
 # help / usage
 
 def usage (name,ret):
@@ -856,85 +923,23 @@ for o, a in opts:
 
 #### ^^^^ cmdline parsing ends
 
+if not boardsshow and not ldshow:
+    usage(sys.argv[0], 0)
+
 if ldshow:
     all_flash_size()
 
-if not boardsshow:
-    if not ldshow:
-        usage(sys.argv[0], 0)
-    sys.exit(0)
+if boardsshow:
+    if boardsgen:
+        # check if running in root
+        if not os.path.isfile("boards.txt"):
+            print "please run me from boards.txt directory (like: ./tools/boards.txt.py -...)"
+            sys.exit(1)
 
-# board show / gen
+        # check if backup already exists
+        if not os.path.isfile("boards.txt.orig"):
+            os.rename("boards.txt", "boards.txt.orig")
 
-if boardsgen:
-    # check if running in root
-    if not os.path.isfile("boards.txt"):
-        print "please run me from boards.txt directory"
-        sys.exit(1)
-
-    # check if backup already exists
-    if not os.path.isfile("boards.txt.orig"):
-        os.rename("boards.txt", "boards.txt.orig")
-
-    sys.stdout = open("boards.txt", 'w')
-
-macros.update(all_flash_size())
-macros.update(all_debug())
-if premerge:
-    macros.update({ 'led': { } })
-else:
-    macros.update(led(led_default, led_max))
-
-print '#'
-print '# this file is script-generated and is likely to be overwritten by ' + sys.argv[0]
-print '#'
-print ''
-print 'menu.BoardModel=Model'
-print 'menu.UploadSpeed=Upload Speed'
-print 'menu.CpuFrequency=CPU Frequency'
-print 'menu.CrystalFreq=Crystal Frequency'
-print 'menu.FlashSize=Flash Size'
-print 'menu.FlashMode=Flash Mode'
-print 'menu.FlashFreq=Flash Frequency'
-print 'menu.ResetMethod=Reset Method'
-print 'menu.ESPModule=Module'
-print 'menu.Debug=Debug port'
-print 'menu.DebugLevel=Debug Level'
-print 'menu.LwIPVariant=lwIP Variant'
-print 'menu.led=Builtin Led'
-print ''
-
-for id in boards:
-    print '##############################################################'
-    board = boards[id]
-    print id + '.name=' + board['name']
-
-    # standalone options
-    if 'opts' in board:
-        for optname in board['opts']:
-            print id + optname + '=' + board['opts'][optname]
-
-    # macros
-    macrolist = [ 'defaults', 'cpufreq_menu', ]
-    if 'macro' in board:
-        macrolist += board['macro']
-    if lwip == 2:
-        macrolist += [ 'lwip2', 'lwip' ]
-    else:
-        macrolist += [ 'lwip', 'lwip2' ]
-    macrolist += [ 'debug_menu', ]
-
-    for cs in customspeeds:
-        print id + cs
-
-    if 'serial' in board:
-        macrolist += speeds[board['serial']]
-    else:
-        macrolist += speeds[default_speed]
-
-    for block in macrolist:
-        for optname in macros[block]:
-            if not ('opts' in board) or not (optname in board['opts']):
-                print id + optname + '=' + macros[block][optname]
-
-    print ''
+        sys.stdout = open("boards.txt", 'w')
+ 
+    allboards()
