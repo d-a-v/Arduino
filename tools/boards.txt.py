@@ -13,7 +13,7 @@
 # touch it, bring it, pay it, watch it, turn it, leave it, start - format
 # it.
 
-# diff ldscripts after ldscripts regeneration:
+# diff ldscripts after regeneration:
 # (cd tools/sdk/ld/backup/; for i in *; do diff -u $i ../$i|less; done)
 
 # board descriptor:
@@ -736,7 +736,21 @@ def led (default,max):
 
 ################################################################
 
-def allboards ():
+def all_boards ():
+
+    if boardsgen:
+        # check if running in root
+        if not os.path.isfile("boards.txt"):
+            print "please run me from boards.txt directory (like: ./tools/boards.txt.py -...)"
+            sys.exit(1)
+
+        # check if backup already exists
+        if not os.path.isfile("boards.txt.orig"):
+            os.rename("boards.txt", "boards.txt.orig")
+
+        realstdout = sys.stdout
+        sys.stdout = open("boards.txt", 'w')
+
     macros.update(all_flash_size())
     macros.update(all_debug())
     if premerge:
@@ -798,6 +812,10 @@ def allboards ():
 
         print ''
 
+    if boardsgen:
+        sys.stdout.close()
+        sys.stdout = realstdout
+
 ################################################################
 # help / usage
 
@@ -817,10 +835,10 @@ def usage (name,ret):
     print ""
     print "	mandatory option (at least one):"
     print ""
-    print "	--boardsshow"
-    print "	--boardsgen"
-    print "	--ldshow"
-    print "	--ldgen"
+    print "	--boardsshow		- show boards.txt"
+    print "	--boardsgen		- replace boards.txt"
+    print "	--ldshow		- show ldscripts"
+    print "	--ldgen			- replace ldscripts"
     print ""
 
     out = ""
@@ -930,16 +948,6 @@ if ldshow:
     all_flash_size()
 
 if boardsshow:
-    if boardsgen:
-        # check if running in root
-        if not os.path.isfile("boards.txt"):
-            print "please run me from boards.txt directory (like: ./tools/boards.txt.py -...)"
-            sys.exit(1)
-
-        # check if backup already exists
-        if not os.path.isfile("boards.txt.orig"):
-            os.rename("boards.txt", "boards.txt.orig")
-
-        sys.stdout = open("boards.txt", 'w')
- 
-    allboards()
+    ldshow = False
+    ldgen = False
+    all_boards()
