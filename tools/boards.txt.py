@@ -35,6 +35,7 @@ import os
 import sys
 import collections
 import getopt
+import re
 
 # serial upload speed order in menu
 # default is 115 for every board unless specified with 'serial' in board
@@ -433,20 +434,20 @@ macros = {
         ( '.menu.CpuFrequency.160', '160 MHz' ),
         ( '.menu.CpuFrequency.160.build.f_cpu', '160000000L' ),
         ]),
-    
+
     'crystalfreq_menu': collections.OrderedDict([
         ( '.menu.CrystalFreq.26', '26 MHz' ),
         ( '.menu.CrystalFreq.40', '40 MHz' ),
         ( '.menu.CrystalFreq.40.build.extra_flags', '-DF_CRYSTAL=40000000' ),
         ]),
-        
+
     'flashfreq_menu': collections.OrderedDict([
         ( '.menu.FlashFreq.40', '40MHz' ),
         ( '.menu.FlashFreq.40.build.flash_freq', '40' ),
         ( '.menu.FlashFreq.80', '80MHz' ),
         ( '.menu.FlashFreq.80.build.flash_freq', '80' ),
         ]),
-        
+
     'flashfreq_40': collections.OrderedDict([
         ( '.build.flash_freq', '40' ),
         ]),
@@ -456,26 +457,26 @@ macros = {
         ]),
 
     ####################### menu.resetmethod
-    
+
     'resetmethod_menu': collections.OrderedDict([
         ( '.menu.ResetMethod.ck', 'ck' ),
         ( '.menu.ResetMethod.ck.upload.resetmethod', 'ck' ),
         ( '.menu.ResetMethod.nodemcu', 'nodemcu' ),
         ( '.menu.ResetMethod.nodemcu.upload.resetmethod', 'nodemcu' ),
         ]),
-    
+
     ####################### upload.resetmethod
-    
+
     'resetmethod_ck': collections.OrderedDict([
         ( '.upload.resetmethod', 'ck' ),
         ]),
-    
+
     'resetmethod_nodemcu': collections.OrderedDict([
         ( '.upload.resetmethod', 'nodemcu' ),
         ]),
 
     ####################### menu.FlashMode
-    
+
     'flashmode_menu': collections.OrderedDict([
         ( '.menu.FlashMode.qio', 'QIO' ),
         ( '.menu.FlashMode.qio.build.flash_mode', 'qio' ),
@@ -488,7 +489,7 @@ macros = {
         ]),
 
     ####################### default flash_mode
-    
+
     'flashmode_dio': collections.OrderedDict([
         ( '.build.flash_mode', 'dio' ),
         ]),
@@ -568,6 +569,11 @@ macros = {
 ################################################################
 # defs
 
+def checkdir ():
+    if not os.path.isfile("boards.txt"):
+        print "please run me from boards.txt directory (like: ./tools/boards.txt.py -...)"
+        sys.exit(1)
+
 ################################################################
 # debug options
 
@@ -643,7 +649,7 @@ def flash_size (display, optname, ld, desc, max_upload_size, spiffs_start = 0, s
         ( menu + '.upload.maximum_size', "%i" % max_upload_size ),
         ])
     if spiffs_start > 0:
-        d.update(collections.OrderedDict([ 
+        d.update(collections.OrderedDict([
             ( menub + 'spiffs_start', "0x%05X" % spiffs_start ),
             ( menub + 'spiffs_end', "0x%05X" % (spiffs_start + spiffs_size) ),
             ( menub + 'spiffs_blocksize', "%i" % spiffs_blocksize ),
@@ -651,15 +657,18 @@ def flash_size (display, optname, ld, desc, max_upload_size, spiffs_start = 0, s
 
     if ldshow:
         if ldgen:
+
+            checkdir()
+
             lddir = "tools/sdk/ld/"
             ldbackupdir = lddir + "backup/"
             if not os.path.isdir(ldbackupdir):
                 os.mkdir(ldbackupdir)
             if not os.path.isfile(ldbackupdir + ld):
                 os.rename(lddir + ld, ldbackupdir + ld)
-	    realstdout = sys.stdout
-	    sys.stdout = open(lddir + ld, 'w')
-            
+            realstdout = sys.stdout
+            sys.stdout = open(lddir + ld, 'w')
+
         if spiffs_size == 0:
             page = 0
             block = 0
@@ -684,7 +693,7 @@ def flash_size (display, optname, ld, desc, max_upload_size, spiffs_start = 0, s
         print "PROVIDE ( _SPIFFS_block = 0x%X );" % block
         print ""
         print 'INCLUDE "../ld/eagle.app.v6.common.ld"'
-        
+
         if ldgen:
             sys.stdout.close()
             sys.stdout = realstdout
@@ -739,10 +748,8 @@ def led (default,max):
 def all_boards ():
 
     if boardsgen:
-        # check if running in root
-        if not os.path.isfile("boards.txt"):
-            print "please run me from boards.txt directory (like: ./tools/boards.txt.py -...)"
-            sys.exit(1)
+
+        checkdir()
 
         # check if backup already exists
         if not os.path.isfile("boards.txt.orig"):
@@ -817,6 +824,42 @@ def all_boards ():
         sys.stdout = realstdout
 
 ################################################################
+
+def package ():
+
+    pkgfname = "package/package_esp8266com_index.template.json"
+    pkgfname_read = pkgfname
+
+    checkdir()
+
+    if packagegen:
+        pkgfname_read = pkgfname + '.orig'
+        # check if backup already exists
+        if not os.path.isfile(pkgfname_read):
+            os.rename(pkgfname, pkgfname_read)
+
+    # read package file
+    with open (pkgfname_read, "r") as package_file:
+        filestr = package_file.read()
+
+    substitution = '"boards": [\n'
+    for id in boards:
+        substitution += '            {\n              "name": "' + boards[id]['name'] + '"\n            },\n'
+    substitution += '          ],'
+
+    newfilestr = re.sub(r'"boards":[^\]]*\],', substitution, filestr, re.MULTILINE)
+
+    if packagegen:
+        realstdout = sys.stdout
+        sys.stdout = open(pkgfname, 'w')
+
+    print newfilestr
+
+    if packagegen:
+        sys.stdout.close()
+        sys.stdout = realstdout
+
+################################################################
 # help / usage
 
 def usage (name,ret):
@@ -835,10 +878,12 @@ def usage (name,ret):
     print ""
     print "	mandatory option (at least one):"
     print ""
-    print "	--boardsshow		- show boards.txt"
+    print "	--boards		- show boards.txt"
     print "	--boardsgen		- replace boards.txt"
-    print "	--ldshow		- show ldscripts"
+    print "	--ld			- show ldscripts"
     print "	--ldgen			- replace ldscripts"
+    print "	--package		- show package"
+    print "	--packagegen		- replace board:[] in package"
     print ""
 
     out = ""
@@ -873,6 +918,8 @@ ldgen = False
 ldshow = False
 boardsgen = False
 boardsshow = False
+packageshow = False
+packagegen = False
 customspeeds = []
 
 #### vvvv cmdline parsing starts
@@ -880,7 +927,7 @@ customspeeds = []
 try:
     opts, args = getopt.getopt(sys.argv[1:], "h",
         [ "help", "premerge", "lwip=", "led=", "speed=", "board=", "customspeed=",
-          "ldshow", "ldgen", "boardsshow", "boardsgen" ])
+          "ld", "ldgen", "boards", "boardsgen", "package", "packagegen" ])
 except getopt.GetoptError as err:
     print str(err)  # will print something like "option -a not recognized"
     usage(sys.argv[0], 1)
@@ -892,13 +939,13 @@ for o, a in opts:
 
     if o in ("-h", "--help"):
         usage(sys.argv[0], 0)
-    
+
     elif o in ("--premerge"):
         premerge = True
 
     elif o in ("--lwip"):
         lwip = a
-    
+
     elif o in ("--led"):
         led_default = int(a)
 
@@ -936,13 +983,17 @@ for o, a in opts:
         boardsshow = True
         boardsgen = True
 
+    elif o in ("--package"):
+        packageshow = True
+
+    elif o in ("--packagegen"):
+        packageshow = True
+        packagegen = True
+
     else:
         assert False, "unhandled option"
 
 #### ^^^^ cmdline parsing ends
-
-if not boardsshow and not ldshow:
-    usage(sys.argv[0], 0)
 
 if ldshow:
     all_flash_size()
@@ -951,3 +1002,9 @@ if boardsshow:
     ldshow = False
     ldgen = False
     all_boards()
+
+if packageshow:
+    package()
+
+if not boardsshow and not ldshow and not packageshow:
+    usage(sys.argv[0], 0)
