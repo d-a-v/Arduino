@@ -129,6 +129,7 @@ boards = collections.OrderedDict([
             '4M',
             'resetmethod_menu',
             ],
+        'desc': [ 'ESPresso Lite 1.0 (beta version) is an Arduino-compatible Wi-Fi development board powered by Espressif System\'s own ESP8266 WROOM-02 module. It has breadboard-friendly breakout pins with in-built LED, two reset/flash buttons and a user programmable button . The operating voltage is 3.3VDC, regulated with 800mA maximum current. Special distinctive features include on-board I2C pads that allow direct connection to OLED LCD and sensor boards.', ]
     }),
     ( 'espresso_lite_v2', {
         'name': 'ESPresso Lite 2.0',
@@ -142,6 +143,7 @@ boards = collections.OrderedDict([
             '4M',
             'resetmethod_menu',
             ],
+        'desc': [ 'ESPresso Lite 2.0 is an Arduino-compatible Wi-Fi development board based on an earlier V1 (beta version). Re-designed together with Cytron Technologies, the newly-revised ESPresso Lite V2.0 features the auto-load/auto-program function, eliminating the previous need to reset the board manually before flashing a new program. It also feature two user programmable side buttons and a reset button. The special distinctive features of on-board pads for I2C sensor and actuator is retained.', ]
     }),
     ( 'phoenix_v1', {
         'name': 'Phoenix 1.0',
@@ -155,6 +157,7 @@ boards = collections.OrderedDict([
             '4M',
             'resetmethod_menu',
             ],
+        'desc': [ 'Product page: http://www.espert.co', ],
     }),
     ( 'phoenix_v2', {
         'name': 'Phoenix 2.0',
@@ -168,6 +171,7 @@ boards = collections.OrderedDict([
             '4M',
             'resetmethod_menu',
             ],
+        'desc': [ 'Product page: http://www.espert.co', ],
     }),
     ( 'nodemcu', {
         'name': 'NodeMCU 0.9 (ESP-12 Module)',
@@ -181,6 +185,26 @@ boards = collections.OrderedDict([
             'flashfreq_40',
             '4M',
             ],
+        'desc': [ 'Pin mapping',
+                  '~~~~~~~~~~~',
+                  '',
+                  'Pin numbers written on the board itself do not correspond to ESP8266 GPIO pin numbers. Constants are defined to make using this board easier:',
+                  '',
+                  '.. code:: c++',
+                  '',
+                  '    static const uint8_t D0   = 16;',
+                  '    static const uint8_t D1   = 5;',
+                  '    static const uint8_t D2   = 4;',
+                  '    static const uint8_t D3   = 0;',
+                  '    static const uint8_t D4   = 2;',
+                  '    static const uint8_t D5   = 14;',
+                  '    static const uint8_t D6   = 12;',
+                  '    static const uint8_t D7   = 13;',
+                  '    static const uint8_t D8   = 15;',
+                  '    static const uint8_t D9   = 3;',
+                  '    static const uint8_t D10  = 1;',
+                  '',
+                  'If you want to use NodeMCU pin 5, use D5 for pin number, and it will be translated to \'real\' GPIO pin 14.', ],
     }),
     ( 'nodemcuv2', {
         'name': 'NodeMCU 1.0 (ESP-12E Module)',
@@ -194,6 +218,16 @@ boards = collections.OrderedDict([
             'flashfreq_40',
             '4M',
             ],
+        'desc': [ 'This module is sold under many names for around $6.50 on AliExpress and it\'s one of the cheapest, fully integrated ESP8266 solutions.',
+                  '',
+                  'It\'s an open hardware design with an ESP-12E core and 4 MB of SPI flash.',
+                  '',
+                  'According to the manufacturer, "with a micro USB cable, you can connect NodeMCU devkit to your laptop and flash it without any trouble". This is more or less true: the board comes with a CP2102 onboard USB to serial adapter which just works, well, the majority of the time. Sometimes flashing fails and you have to reset the board by holding down FLASH +',
+                  'RST, then releasing FLASH, then releasing RST. This forces the CP2102 device to power cycle and to be re-numbered by Linux.',
+                  '',
+                  'The board also features a NCP1117 voltage regulator, a blue LED on GPIO16 and a 220k/100k Ohm voltage divider on the ADC input pin.',
+                  '',
+                  'Full pinout and PDF schematics can be found `here <https://github.com/nodemcu/nodemcu-devkit-v1.0>`__', ],
     }),
     ( 'modwifi', {
         'name': 'Olimex MOD-WIFI-ESP8266(-DEV)',
@@ -860,6 +894,25 @@ def package ():
         sys.stdout = realstdout
 
 ################################################################
+
+def doc ():
+    for id in boards:
+        board = boards[id]
+        print board['name']
+        dash = ""
+        for i in range(len(board['name'])):
+            dash += '-'
+        print dash
+
+        print ''
+        if 'desc' in board:
+            for line in board['desc']:
+                print line
+        else:
+            print 'No description'
+        print ''
+
+################################################################
 # help / usage
 
 def usage (name,ret):
@@ -884,6 +937,7 @@ def usage (name,ret):
     print "	--ldgen			- replace ldscripts"
     print "	--package		- show package"
     print "	--packagegen		- replace board:[] in package"
+    print "	--doc			- shows doc/boards.rst"
     print ""
 
     out = ""
@@ -920,6 +974,8 @@ boardsgen = False
 boardsshow = False
 packageshow = False
 packagegen = False
+docshow = False
+docgen = False
 customspeeds = []
 
 #### vvvv cmdline parsing starts
@@ -927,7 +983,7 @@ customspeeds = []
 try:
     opts, args = getopt.getopt(sys.argv[1:], "h",
         [ "help", "premerge", "lwip=", "led=", "speed=", "board=", "customspeed=",
-          "ld", "ldgen", "boards", "boardsgen", "package", "packagegen" ])
+          "ld", "ldgen", "boards", "boardsgen", "package", "packagegen", "doc", "docgen" ])
 except getopt.GetoptError as err:
     print str(err)  # will print something like "option -a not recognized"
     usage(sys.argv[0], 1)
@@ -990,21 +1046,37 @@ for o, a in opts:
         packageshow = True
         packagegen = True
 
+    elif o in ("--doc"):
+        docshow = True
+
+    elif o in ("--docgen"):
+        docshow = True
+        docgen = True
+
     else:
         assert False, "unhandled option"
 
 #### ^^^^ cmdline parsing ends
 
+did = False
+
 if ldshow:
     all_flash_size()
+    did = True
 
 if boardsshow:
     ldshow = False
     ldgen = False
     all_boards()
+    did = True
 
 if packageshow:
     package()
+    did = True
 
-if not boardsshow and not ldshow and not packageshow:
+if docshow:
+    doc()
+    did = True
+
+if not did:
     usage(sys.argv[0], 0)

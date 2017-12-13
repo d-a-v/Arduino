@@ -433,17 +433,17 @@ esp8285.menu.UploadSpeed.921600.upload.speed=921600
 
 ##############################################################
 espduino.name=ESPDuino (ESP-13 Module)
-espduino.menu.UploadTool.espota=OTA
-espduino.menu.ResetMethod.ck=ESPduino-V1
-espduino.build.variant=ESPDuino
-espduino.menu.ResetMethod.ESPduino=ESPduino-V2
-espduino.menu.UploadTool.espota.upload.tool=espota
-espduino.menu.ResetMethod.ESPduino.upload.resetmethod=nodemcu
-espduino.menu.UploadTool.esptool.upload.tool=esptool
 espduino.build.board=ESP8266_ESP13
-espduino.menu.UploadTool.esptool.upload.verbose=-vv
-espduino.menu.ResetMethod.ck.upload.resetmethod=nodemcu
+espduino.build.variant=ESPDuino
+espduino.menu.ResetMethod.v2=ESPduino-V2
+espduino.menu.ResetMethod.v2.upload.resetmethod=nodemcu
+espduino.menu.ResetMethod.v1=ESPduino-V1
+espduino.menu.ResetMethod.v1.upload.resetmethod=ck
 espduino.menu.UploadTool.esptool=Serial
+espduino.menu.UploadTool.esptool.upload.tool=esptool
+espduino.menu.UploadTool.esptool.upload.verbose=-vv
+espduino.menu.UploadTool.espota=OTA
+espduino.menu.UploadTool.espota.upload.tool=espota
 espduino.upload.tool=esptool
 espduino.upload.maximum_data_size=81920
 espduino.upload.wait_for_upload_port=true
