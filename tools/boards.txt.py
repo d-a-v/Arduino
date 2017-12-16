@@ -632,11 +632,13 @@ def comb1 (lst):
 def all_debug ():
     listcomb = [ 'SSL', 'TLS_MEM', 'HTTP_CLIENT', 'HTTP_SERVER' ]
     listnocomb = [ 'CORE', 'WIFI', 'HTTP_UPDATE', 'UPDATER', 'OTA' ]
+    listsingle = [ 'NoAssert-NDEBUG' ]
     if not premerge:
         listnocomb += [ 'NULL -include "umm_malloc/umm_malloc_cfg.h"' ]
     options = combn(listcomb)
     options += comb1(listnocomb)
     options += [ listcomb + listnocomb ]
+    options += [ listsingle ]
     debugmenu = collections.OrderedDict([
             ( '.menu.Debug.Disabled', 'Disabled' ),
             ( '.menu.Debug.Disabled.build.debug_port', '' ),
@@ -647,6 +649,7 @@ def all_debug ():
             ( '.menu.DebugLevel.None____', 'None' ),
             ( '.menu.DebugLevel.None____.build.debug_level', '' ),
         ])
+
     for optlist in options:
         debugname = ''
         debugmenuname = ''
@@ -662,7 +665,10 @@ def all_debug ():
             if debugmenuname != '':
                 debugmenuname += '+'
             debugmenuname += simpleopt
-            debugdefs += ' -DDEBUG_ESP_' + opt
+            if opt == 'NoAssert-NDEBUG':
+                debugdefs += ' -DNDEBUG'
+            else:
+                debugdefs += ' -DDEBUG_ESP_' + opt
         debugmenu.update(collections.OrderedDict([
             ( '.menu.DebugLevel.' + debugname, debugmenuname ),
             ( '.menu.DebugLevel.' + debugname + '.build.debug_level', debugdefs )
