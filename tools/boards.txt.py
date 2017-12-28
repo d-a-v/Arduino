@@ -546,11 +546,11 @@ macros = {
         ( '.menu.LwIPVariant.v2mss536', 'v2 Prebuilt (MSS=536)' ),
         ( '.menu.LwIPVariant.v2mss536.build.lwip_include', 'lwip2/include' ),
         ( '.menu.LwIPVariant.v2mss536.build.lwip_lib', '-llwip2' ),
-        ( '.menu.LwIPVariant.v2mss536.build.lwip_flags', '-DTCP_MSS=536' ),
+        ( '.menu.LwIPVariant.v2mss536.build.lwip_flags', '-DLWIP_OPEN_SRC -DTCP_MSS=536' ),
         ( '.menu.LwIPVariant.v2mss1460', 'v2 Prebuilt (MSS=1460, unstable)' ),
         ( '.menu.LwIPVariant.v2mss1460.build.lwip_include', 'lwip2/include' ),
         ( '.menu.LwIPVariant.v2mss1460.build.lwip_lib', '-llwip2_1460' ),
-        ( '.menu.LwIPVariant.v2mss1460.build.lwip_flags', '-DTCP_MSS=1460' ),
+        ( '.menu.LwIPVariant.v2mss1460.build.lwip_flags', '-DLWIP_OPEN_SRC -DTCP_MSS=1460' ),
         ]),
 
     'lwip': collections.OrderedDict([
