@@ -543,19 +543,24 @@ macros = {
     ####################### lwip
 
     'lwip2': collections.OrderedDict([
-        ( '.menu.LwIPVariant.open', 'v2 Prebuilt (gcc)' ),
-        ( '.menu.LwIPVariant.open.build.lwip_include', 'lwip2/include' ),
-        ( '.menu.LwIPVariant.open.build.lwip_lib', '-llwip2' ),
+        ( '.menu.LwIPVariant.v2mss536', 'v2 Prebuilt (MSS=536)' ),
+        ( '.menu.LwIPVariant.v2mss536.build.lwip_include', 'lwip2/include' ),
+        ( '.menu.LwIPVariant.v2mss536.build.lwip_lib', '-llwip2' ),
+        ( '.menu.LwIPVariant.v2mss536.build.lwip_flags', '-DTCP_MSS=536' ),
+        ( '.menu.LwIPVariant.v2mss1460', 'v2 Prebuilt (MSS=1460, unstable)' ),
+        ( '.menu.LwIPVariant.v2mss1460.build.lwip_include', 'lwip2/include' ),
+        ( '.menu.LwIPVariant.v2mss1460.build.lwip_lib', '-llwip2_1460' ),
+        ( '.menu.LwIPVariant.v2mss1460.build.lwip_flags', '-DTCP_MSS=1460' ),
         ]),
 
     'lwip': collections.OrderedDict([
-        ( '.menu.LwIPVariant.Prebuilt', 'v1.4 Prebuilt (gcc)' ),
+        ( '.menu.LwIPVariant.Prebuilt', 'v1.4 Prebuilt' ),
         ( '.menu.LwIPVariant.Prebuilt.build.lwip_lib', '-llwip_gcc' ),
         ( '.menu.LwIPVariant.Prebuilt.build.lwip_flags', '-DLWIP_OPEN_SRC' ),
-        ( '.menu.LwIPVariant.Espressif', 'v1.4 Espressif (xcc)' ),
-        ( '.menu.LwIPVariant.Espressif.build.lwip_lib', '-llwip' ),
-        ( '.menu.LwIPVariant.Espressif.build.lwip_flags', '-DLWIP_MAYBE_XCC' ),
-        ( '.menu.LwIPVariant.OpenSource', 'v1.4 Open Source (gcc)' ),
+        #( '.menu.LwIPVariant.Espressif', 'v1.4 Espressif (xcc)' ),
+        #( '.menu.LwIPVariant.Espressif.build.lwip_lib', '-llwip' ),
+        #( '.menu.LwIPVariant.Espressif.build.lwip_flags', '-DLWIP_MAYBE_XCC' ),
+        ( '.menu.LwIPVariant.OpenSource', 'v1.4 Open Source' ),
         ( '.menu.LwIPVariant.OpenSource.build.lwip_lib', '-llwip_src' ),
         ( '.menu.LwIPVariant.OpenSource.build.lwip_flags', '-DLWIP_OPEN_SRC' ),
         ( '.menu.LwIPVariant.OpenSource.recipe.hooks.sketch.prebuild.1.pattern', 'make -C "{runtime.platform.path}/tools/sdk/lwip/src" install TOOLS_PATH="{runtime.tools.xtensa-lx106-elf-gcc.path}/bin/xtensa-lx106-elf-"' ),
