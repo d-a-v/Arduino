@@ -386,6 +386,7 @@ boards = collections.OrderedDict([
             '.menu.ESPModule.ESP12.upload.maximum_size': '1044464',
             },
         'macro': [
+            'resetmethod_nodemcu',
             'flashmode_qio',
             'flashfreq_menu',
             '1M',
@@ -409,6 +410,7 @@ boards = collections.OrderedDict([
             '.menu.BoardModel.starottodeved.build.extra_flags': '-DF_CRYSTAL=40000000 -DESP8266',
             },
         'macro': [
+            'resetmethod_ck',
             'flashmode_qio',
             'flashfreq_40',
             '4M',
@@ -422,6 +424,7 @@ boards = collections.OrderedDict([
             '.build.variant': 'generic',
             },
         'macro': [
+            'resetmethod_nodemcu',
             'flashmode_qio',
             'flashfreq_80',
             '512K',
@@ -435,6 +438,7 @@ boards = collections.OrderedDict([
             '.upload.maximum_size': '1040368',
             },
         'macro': [
+            'resetmethod_ck',
             'flashmode_dio',
             'flashfreq_40',
             '4M',
