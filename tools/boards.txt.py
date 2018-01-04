@@ -904,7 +904,7 @@ def all_debug ():
     listnocomb = [ 'CORE', 'WIFI', 'HTTP_UPDATE', 'UPDATER', 'OTA' ]
     listsingle = [ 'NoAssert-NDEBUG' ]
     if not premerge:
-        listnocomb += [ 'NULL -include "umm_malloc/umm_malloc_cfg.h"' ]
+        listnocomb += [ 'OOM -include "umm_malloc/umm_malloc_cfg.h"' ]
     options = combn(listcomb)
     options += comb1(listnocomb)
     options += [ listcomb + listnocomb ]
@@ -1222,7 +1222,7 @@ def usage (name,ret):
     print "	--led			- preferred default builtin led for generic boards (default %d)" % led_default
     print "	--board b		- board to modify:"
     print "		--speed	s	- change default serial speed"
-    print "	--premerge		- no NULL debug option, no led menu"
+    print "	--premerge		- no OOM debug option, no led menu"
     print "	--customspeed s		- new serial speed for all boards"
     print ""
     print "	mandatory option (at least one):"

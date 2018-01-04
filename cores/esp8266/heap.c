@@ -39,22 +39,88 @@ void ICACHE_RAM_ATTR vPortFree(void *ptr, const char* file, int line)
     free(ptr);
 }
 
-#ifdef DEBUG_ESP_NULL
+#ifdef DEBUG_ESP_OOM
 
-// for some reason, I can't display file/line for pvPort* called from sdk libraries (segfault or garbage)
-// see umm_malloc_cfg.h for explanations
+void* ICACHE_RAM_ATTR pvPortMalloc(size_t size, const char* file, int line)
+{
+    return malloc_loc(size, file, line);
+}
 
-#define ALLOCWRAPPER4(name,call,attr) \
-	void* attr name (size_t s, const char* file, int line) { void* ret = call(s); (void)file; (void)line; if (!ret) os_printf(":null(%d)@internal\n", (int)s); return ret; }
-#define ALLOCWRAPPERP4(name,call,type,var,attr) \
-	void* attr name (type var, size_t s, const char* file, int line) { void* ret = call(var, s); (void)file; (void)line; if (!ret) os_printf(":null(%d)@internal\n", (int)s); return ret; }
+void* ICACHE_RAM_ATTR pvPortCalloc(size_t count, size_t size, const char* file, int line)
+{
+    return calloc_loc(count, size, file, line);
+}
 
-ALLOCWRAPPER4(pvPortMalloc, umm_malloc, ICACHE_RAM_ATTR)
-ALLOCWRAPPERP4(pvPortCalloc, umm_calloc, size_t, count, ICACHE_RAM_ATTR)
-ALLOCWRAPPERP4(pvPortRealloc, umm_realloc, void*, ptr, ICACHE_RAM_ATTR)
-ALLOCWRAPPER4(pvPortZalloc, umm_zalloc, ICACHE_RAM_ATTR)
+void* ICACHE_RAM_ATTR pvPortRealloc(void *ptr, size_t size, const char* file, int line)
+{
+    return realloc_loc(ptr, size, file, line);
+}
 
-#else // !defined(DEBUG_ESP_NULL)
+void* ICACHE_RAM_ATTR pvPortZalloc(size_t size, const char* file, int line)
+{
+    return calloc_loc(1, size, file, line);
+}
+
+#undef malloc
+#undef calloc
+#undef realloc
+
+void* malloc (size_t s)
+{
+    void* ret = umm_malloc(s);
+    if (!ret)
+        os_printf(":oom(%d)@?\n", (int)s);
+    return ret;
+}
+
+void* calloc (size_t n, size_t s)
+{
+    void* ret = umm_calloc(n, s);
+    if (!ret)
+        os_printf(":oom(%d)@?\n", (int)s);
+    return ret;
+}
+
+void* realloc (void* p, size_t s)
+{
+    void* ret = umm_realloc(p, s);
+    if (!ret)
+        os_printf(":oom(%d)@?\n", (int)s);
+    return ret;
+}
+
+void print_loc (size_t s, const char* file, int line)
+{
+        os_printf(":oom(%d)@", (int)s);
+        os_printf(file);
+        os_printf(":%d\n", line);
+}
+
+void* malloc_loc (size_t s, const char* file, int line)
+{
+    void* ret = umm_malloc(s);
+    if (!ret)
+        print_loc(s, file, line);
+    return ret;
+}
+
+void* calloc_loc (size_t n, size_t s, const char* file, int line)
+{
+    void* ret = umm_calloc(n, s);
+    if (!ret)
+        print_loc(s, file, line);
+    return ret;
+}
+
+void* realloc_loc (void* p, size_t s, const char* file, int line)
+{
+    void* ret = umm_realloc(p, s);
+    if (!ret)
+        print_loc(s, file, line);
+    return ret;
+}
+
+#else
 
 void* ICACHE_RAM_ATTR pvPortMalloc(size_t size, const char* file, int line)
 {
@@ -84,7 +150,7 @@ void* ICACHE_RAM_ATTR pvPortZalloc(size_t size, const char* file, int line)
     return calloc(1, size);
 }
 
-#endif // !defined(DEBUG_ESP_NULL)
+#endif // !defined(DEBUG_ESP_OOM)
 
 size_t xPortGetFreeHeapSize(void)
 {

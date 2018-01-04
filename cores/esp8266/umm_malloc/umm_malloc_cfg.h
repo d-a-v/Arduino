@@ -2,7 +2,7 @@
  * Configuration for umm_malloc
  */
 
-// with DEBUG_ESP_NULL debug option activated,
+// with DEBUG_ESP_OOM debug option activated,
 // implying gcc option '-include this-file'
 // this file is included in *every* source file
 // *before* any other include file
@@ -68,9 +68,11 @@ extern "C" {
  */
 
 /////////////////////////////////////////////////
-#ifdef DEBUG_ESP_NULL
+#ifdef DEBUG_ESP_OOM
 
 #define MEMLEAK_DEBUG
+
+// umm_*alloc are not renamed to *alloc
 
 void *umm_malloc( size_t size );
 void *umm_calloc( size_t num, size_t size );
@@ -78,42 +80,19 @@ void *umm_realloc( void *ptr, size_t size );
 #define umm_free    free
 #define umm_zalloc(s) umm_calloc(1,s)
 
-#define ALLOCWRAPPER1(name,call,attr) \
-	void* attr name (size_t s) __attribute__((weak)); \
-	void* attr name (size_t s) { void* ret = call(s); if (!ret) os_printf(":null(%d)@internal\n", (int)s); return ret; }
-#define ALLOCWRAPPER2(name,s) ({ static const char mem_debug_file[] /*ICACHE_RODATA_ATTR STORE_ATTR*/ = __FILE__; name##_null(s, mem_debug_file, __LINE__); })
-#define ALLOCWRAPPER3(name,call,attr) \
-	void* attr name##_null (size_t s, const char* file, int line) __attribute__((weak)); \
-	void* attr name##_null (size_t s, const char* file, int line) { void* ret = call(s); if (!ret) os_printf(":null(%d)@%s:%d\n", (int)s, file, line); return ret; }
+void* malloc_loc (size_t s, const char* file, int line);
+void* calloc_loc (size_t n, size_t s, const char* file, int line);
+void* realloc_loc (void* p, size_t s, const char* file, int line);
 
-#define ALLOCWRAPPERP1(name,call,type,var,attr) \
-	void* attr name (type var, size_t s) __attribute__((weak)); \
-	void* attr name (type var, size_t s) { void* ret = call(var, s); if (!ret) os_printf(":null(%d)@internal\n", (int)s); return ret; }
-#define ALLOCWRAPPERP2(name,type,var,s) ({ static const char mem_debug_file[] /*ICACHE_RODATA_ATTR STORE_ATTR*/ = __FILE__; name##_null(var, s, mem_debug_file, __LINE__); })
-#define ALLOCWRAPPERP3(name,call,type,var,attr) \
-	void* attr name##_null (type var, size_t s, const char* file, int line) __attribute__((weak)); \
-	void* attr name##_null (type var, size_t s, const char* file, int line) { void* ret = call(var, s); if (!ret) os_printf(":null(%d)@%s:%d\n", (int)s, file, (int)line); return ret; }
-
-// above/below wrappers explanation:
-// 1. malloc() symbols from binary libraries calls umm_malloc() and check/print result
-// 2. malloc() calls in source code are redefined as malloc_null(__FILE__,__LINE__)
-// 3. malloc_null() calls umm_malloc() and check/print result
-
-ALLOCWRAPPER1(malloc,umm_malloc,)
-#define malloc(s) ALLOCWRAPPER2(malloc,s)
-ALLOCWRAPPER3(malloc,umm_malloc,)
-
-ALLOCWRAPPERP1(calloc,umm_calloc,size_t,n,)
-#define calloc(n,s) ALLOCWRAPPERP2(calloc,size_t,n,s)
-ALLOCWRAPPERP3(calloc,umm_calloc,size_t,n,)
-
-ALLOCWRAPPERP1(realloc,umm_realloc,void*,p,)
-#define realloc(p,s) ALLOCWRAPPERP2(realloc,void*,p,s)
-ALLOCWRAPPERP3(realloc,umm_realloc,void*,p,)
+// *alloc are macro calling *alloc_loc calling+checking umm_*alloc()
+// they are defined at the bottom of this file
 
 /////////////////////////////////////////////////
-#else // !defined(ESP_DEBUG_NULL)
+#else // !defined(ESP_DEBUG_OOM)
+
+ // umm_*alloc are renamed to *alloc
  #define UMM_REDEFINE_MEM_FUNCTIONS
+
 #endif
 
  #define UMM_BEST_FIT
@@ -202,4 +181,14 @@ extern char _heap_start;
 
 #endif /* _UMM_MALLOC_CFG_H */
 
+#ifdef DEBUG_ESP_OOM
+// this must be outside from "#ifndef _UMM_MALLOC_CFG_H"
+// because Arduino.h's <cstdlib> does #undef *alloc
+// so Arduino.h recall us to redefine them
+#define malloc(s) ({ static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__; malloc_loc(s, mem_debug_file, __LINE__); })
+#define calloc(n,s) ({ static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__; calloc_loc(n, s, mem_debug_file, __LINE__); })
+#define realloc(p,s) ({ static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__; realloc_loc(p, s, mem_debug_file, __LINE__); })
+
 #endif
+
+#endif /* !__ASSEMBLER__ */

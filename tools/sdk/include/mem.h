@@ -46,21 +46,10 @@ bool ICACHE_FLASH_ATTR check_memleak_debug_enable(void)
 #define os_zalloc zalloc
 
 #ifndef MEMLEAK_DEBUG
-
 #define MEMLEAK_DEBUG_ENABLE	0
-#if 0
-#define os_free(s)        vPortFree(s, "", 0)
-#define os_malloc(s)      pvPortMalloc(s, "", 0)
-#define os_calloc(s)      pvPortCalloc(s, "", 0);
-#define os_realloc(p, s)  pvPortRealloc(p, s, "", 0)
-#define os_zalloc(s)      pvPortZalloc(s, "", 0)
-#endif // 0
-
-#else //defined(MEMLEAK_DEBUG)
-
+#else
 #define MEMLEAK_DEBUG_ENABLE	1
-
-#endif //defined(MEMLEAK_DEBUG)
+#endif
 
 #ifdef __cplusplus
 }
