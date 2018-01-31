@@ -200,7 +200,7 @@ bool SSDPClass::begin(){
 }
 
 void SSDPClass::_send(ssdp_method_t method){
-  char buffer[1460];
+  char buffer[TCP_MSS];
   IPAddress ip = WiFi.localIP();
 
   char valueBuffer[strlen_P(_ssdp_notify_template)+1];
