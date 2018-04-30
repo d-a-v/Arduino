@@ -977,7 +977,8 @@ static void *get_unpoisoned( unsigned char *ptr ) {
 
 UMM_HEAP_INFO ummHeapInfo;
 
-void ICACHE_FLASH_ATTR *umm_info( void *ptr, int force ) {
+//void ICACHE_FLASH_ATTR *umm_info( void *ptr, int force ) {
+void *umm_info( void *ptr, int force ) {
 
   unsigned short int blockNo = 0;
 

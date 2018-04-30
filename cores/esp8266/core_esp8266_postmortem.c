@@ -78,6 +78,9 @@ static char ICACHE_RAM_ATTR iram_read_byte (const char *addr) {
 }
 
 // Place these strings in .text because the SPI interface may be in bad shape during an exception.
+#if 1
+#define ets_printf_P os_printf_plus
+#else
 #define ets_printf_P(str, ...) \
 { \
     static const char istr[] ICACHE_RAM_ATTR = (str); \
@@ -85,6 +88,7 @@ static char ICACHE_RAM_ATTR iram_read_byte (const char *addr) {
     for (size_t i=0; i < sizeof(str); i++) mstr[i] = iram_read_byte(&istr[i]); \
     ets_printf(mstr, ##__VA_ARGS__); \
 }
+#endif
 
 void __wrap_system_restart_local() {
     register uint32_t sp asm("a1");

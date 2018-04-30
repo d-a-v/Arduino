@@ -45,7 +45,9 @@
 #include "user_interface.h"
 #include "debug.h"
 
+#define LTO(x...) x
 
+//LTO(int ICACHE_RAM_ATTR _open_r (struct _reent* unused, const char *ptr, int mode) __attribute__((used));)
 int ICACHE_RAM_ATTR _open_r (struct _reent* unused, const char *ptr, int mode) {
     (void)unused;
     (void)ptr;
@@ -53,12 +55,14 @@ int ICACHE_RAM_ATTR _open_r (struct _reent* unused, const char *ptr, int mode) {
     return 0;
 }
 
+LTO(int ICACHE_RAM_ATTR _close_r(struct _reent* unused, int file) __attribute__((used));)
 int ICACHE_RAM_ATTR _close_r(struct _reent* unused, int file) {
     (void)unused;
     (void)file;
     return 0;
 }
 
+LTO(int ICACHE_RAM_ATTR _fstat_r(struct _reent* unused, int file, struct stat *st) __attribute__((used));)
 int ICACHE_RAM_ATTR _fstat_r(struct _reent* unused, int file, struct stat *st) {
     (void)unused;
     (void)file;
@@ -66,6 +70,7 @@ int ICACHE_RAM_ATTR _fstat_r(struct _reent* unused, int file, struct stat *st) {
     return 0;
 }
 
+LTO(int ICACHE_RAM_ATTR _lseek_r(struct _reent* unused, int file, int ptr, int dir) __attribute__((used));)
 int ICACHE_RAM_ATTR _lseek_r(struct _reent* unused, int file, int ptr, int dir) {
     (void)unused;
     (void)file;
@@ -74,6 +79,7 @@ int ICACHE_RAM_ATTR _lseek_r(struct _reent* unused, int file, int ptr, int dir) 
     return 0;
 }
 
+LTO(int ICACHE_RAM_ATTR _read_r(struct _reent* unused, int file, char *ptr, int len) __attribute__((used));)
 int ICACHE_RAM_ATTR _read_r(struct _reent* unused, int file, char *ptr, int len) {
     (void)unused;
     (void)file;
@@ -82,6 +88,7 @@ int ICACHE_RAM_ATTR _read_r(struct _reent* unused, int file, char *ptr, int len)
     return 0;
 }
 
+LTO(int ICACHE_RAM_ATTR _write_r(struct _reent* r, int file, char *ptr, int len) __attribute__((used));)
 int ICACHE_RAM_ATTR _write_r(struct _reent* r, int file, char *ptr, int len) {
     (void) r;
     if (file == STDOUT_FILENO) {
