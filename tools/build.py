@@ -43,6 +43,9 @@ def compile(tmp_dir, sketch, tools_dir, hardware_dir, ide_path, f, args):
             cmd += '-hardware "' + hw_dir + '" '
     else:
         cmd += '-hardware "' + hardware_dir + '" '
+    if args.prefs:
+        for pref in args.prefs:
+            cmd += '--prefs="' + pref + '" '
     # Debug=Serial,DebugLevel=Core____
     cmd += '-fqbn=esp8266com:esp8266:{board_name}:' \
             'CpuFrequency={cpu_freq},' \
@@ -90,6 +93,7 @@ def parse_args():
     parser.add_argument('-o', '--output_binary', help='File name for output binary')
     parser.add_argument('-k', '--keep', action='store_true',
                         help='Don\'t delete temporary build directory')
+    parser.add_argument('--prefs', help='more arduino builder args', action='append')
     parser.add_argument('--flash_freq', help='Flash frequency', default=40,
                         type=int, choices=[40, 80])
     parser.add_argument('--debug_port', help='Debug port',
