@@ -775,7 +775,7 @@ typedef enum {
     SYSTEM_PARTITION_SSL_SERVER_CA,
     SYSTEM_PARTITION_WPA2_ENTERPRISE_CERT_PRIVKEY,
     SYSTEM_PARTITION_WPA2_ENTERPRISE_CA,
-    
+
     SYSTEM_PARTITION_CUSTOMER_BEGIN = 100,  /* user can define partition after here */
     SYSTEM_PARTITION_MAX
 } partition_type_t;

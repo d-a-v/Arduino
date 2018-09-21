@@ -212,30 +212,66 @@ extern "C" void ICACHE_RAM_ATTR app_entry (void)
     return app_entry_custom();
 }
 
-extern "C" void user_pre_init (void)
+extern "C" ICACHE_FLASH_ATTR void user_pre_init (void)
 {
+    // https://github.com/espressif/ESP8266_NONOS_SDK/issues/158#issuecomment-413410826
+
 // need to get those numbers from board/generator
 // NOT WORKING - need to get numbers from board/generator
-// 4M
-#define SPI_FLASH_SIZE_MAP 4
-#define SYSTEM_PARTITION_RF_CAL_ADDR           (0x400000 - 0x3000 - 0x1000 - 0x1000)
-#define SYSTEM_PARTITION_PHY_DATA_ADDR         (0x400000 - 0x3000 - 0x1000)
-#define SYSTEM_PARTITION_SYSTEM_PARAMETER_ADDR (0x400000 - 0x3000)
-    static const partition_item_t partitions[] = {
-        { SYSTEM_PARTITION_BOOTLOADER, 	0x0, 0x1000},
-        { SYSTEM_PARTITION_RF_CAL, SYSTEM_PARTITION_RF_CAL_ADDR, 0x1000},
-        { SYSTEM_PARTITION_PHY_DATA, SYSTEM_PARTITION_PHY_DATA_ADDR, 0x1000},
-        { SYSTEM_PARTITION_SYSTEM_PARAMETER,SYSTEM_PARTITION_SYSTEM_PARAMETER_ADDR, 0x3000},
-        { SYSTEM_PARTITION_CUSTOMER_BEGIN, 0x1000, 0x8000},
+// 4M1M
+#define RFCAL_OFFSET           0x3fb000
+#define RFCAL_SIZE             0x1000
+#define PHYDATA_OFFSET         0x3fc000
+#define PHYDATA_SIZE           0x1000
+#define SYSTEM_CONFIG_OFFSET   0x3fd000
+#define SYSTEM_CONFIG_SIZE     0x3000
+
+#define MAP FLASH_SIZE_32M_MAP_512_512    
+//#define MAP FLASH_SIZE_32M_MAP_1024_1024
+    static const partition_item_t partitions[] =
+    {
+        { SYSTEM_PARTITION_BOOTLOADER,            0x0,                                    0x1000},
+	{ SYSTEM_PARTITION_RF_CAL,                RFCAL_OFFSET,				RFCAL_SIZE,				},
+	{ SYSTEM_PARTITION_PHY_DATA,		PHYDATA_OFFSET,				PHYDATA_SIZE,			},
+	{ SYSTEM_PARTITION_SYSTEM_PARAMETER,	SYSTEM_CONFIG_OFFSET,		SYSTEM_CONFIG_SIZE,		},
+        { SYSTEM_PARTITION_CUSTOMER_BEGIN,      0x2000, 0xa000},
+    #if 0
+	{	SYSTEM_PARTITION_CUSTOMER_BEGIN + 0,	USER_CONFIG_OFFSET,			USER_CONFIG_SIZE,		},
+	{	SYSTEM_PARTITION_CUSTOMER_BEGIN + 1,	OFFSET_OTA_BOOT,			SIZE_OTA_BOOT,			},
+	{	SYSTEM_PARTITION_CUSTOMER_BEGIN + 2,	OFFSET_OTA_RBOOT_CFG,		SIZE_OTA_RBOOT_CFG,		},
+	{	SYSTEM_PARTITION_CUSTOMER_BEGIN + 3,	OFFSET_OTA_IMG_0,			SIZE_OTA_IMG,			},
+	{	SYSTEM_PARTITION_CUSTOMER_BEGIN + 4,	OFFSET_OTA_IMG_1,			SIZE_OTA_IMG,			},
+	{	SYSTEM_PARTITION_CUSTOMER_BEGIN + 5,	SEQUENCER_FLASH_OFFSET_0,	SEQUENCER_FLASH_SIZE,	},
+	{	SYSTEM_PARTITION_CUSTOMER_BEGIN + 6,	SEQUENCER_FLASH_OFFSET_1,	SEQUENCER_FLASH_SIZE,	},
+#endif
     };
-    if (!system_partition_table_regist(partitions, sizeof(partitions) / sizeof(partitions[0]), SPI_FLASH_SIZE_MAP))
+  
+    // serial must be 74880/8n1(crystal@26Mhz) (or? 115200@40Mhz?) to watch debug messages:
+    if (!system_partition_table_regist(partitions, sizeof(partitions) / sizeof(partitions[0]), MAP))
     {
         os_printf("system_partition_table_regist: failed\n");
         while(1);
     }
 }
 
-extern "C" void user_init(void) {
+extern "C" ICACHE_FLASH_ATTR void user_init(void) {
+
+    //pinMode(1, FUNCTION_0);
+    GPC(1) = (GPC(1) & (0xF << GPCI)); //SOURCE(GPIO) | DRIVER(NORMAL) | INT_TYPE(UNCHANGED) | WAKEUP_ENABLE(DISABLED)
+    GPEC = (1 << 1); //Disable
+    GPF(1) = GPFFS((UART_TX_ONLY >> 4) & 0x07);
+
+    IOSWAP &= ~(1 << IOSWAPU0);
+    USD(0) = (ESP8266_CLOCK / 115200);
+    USC0(0) = UART_8N1;
+    USC1(0) = 0;
+    USIC(0) = 0xffff;
+    USIE(0) = 0;
+    
+    while (((USS(0) >> USTXC) & 0xff) > 0x7f);
+    USF(0) = '#';
+
+
     struct rst_info *rtc_info_ptr = system_get_rst_info();
     memcpy((void *) &resetInfo, (void *) rtc_info_ptr, sizeof(resetInfo));
 
