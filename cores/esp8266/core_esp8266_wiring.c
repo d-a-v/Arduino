@@ -204,7 +204,10 @@ void ICACHE_RAM_ATTR delayMicroseconds(unsigned int us) {
     os_delay_us(us);
 }
 
+#define D(y) do { USF(0) = y; USF(0) = '\n'; for (volatile uint32_t x = 0; x < 0xfffff; x++) (volatile void)x; } while (0)
+
 void init() {
+
     initPins();
     timer1_isr_init();
     os_timer_setfn(&micros_overflow_timer, (os_timer_func_t*) &micros_overflow_tick, 0);

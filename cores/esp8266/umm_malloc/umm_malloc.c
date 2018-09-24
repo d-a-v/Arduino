@@ -1,3 +1,8 @@
+
+#include "esp8266_peri.h"
+#define D(y) do { USF(0) = y; USF(0) = '\n'; for (volatile uint32_t x = 0; x < 0xffff; x++) (volatile void)x; } while (0)
+
+
 /* ----------------------------------------------------------------------------
  * umm_malloc.c - a memory allocator for embedded systems (microcontrollers)
  *
@@ -1347,6 +1352,8 @@ static void _umm_free( void *ptr ) {
 /* ------------------------------------------------------------------------ */
 
 static void *_umm_malloc( size_t size ) {
+D('X');
+os_printf("m(%d)", size);
   unsigned short int blocks;
   unsigned short int blockSize = 0;
 
@@ -1471,6 +1478,7 @@ static void *_umm_malloc( size_t size ) {
   /* Release the critical section... */
   UMM_CRITICAL_EXIT();
 
+os_printf("(%p)", &UMM_DATA(cf));
   return( (void *)&UMM_DATA(cf) );
 }
 
@@ -1742,8 +1750,11 @@ void *umm_realloc( void *ptr, size_t size ) {
 /* ------------------------------------------------------------------------ */
 
 void umm_free( void *ptr ) {
-
+D('Y');
+os_printf("f(%p)", ptr);
+D('Z');
   ptr = GET_UNPOISONED(ptr);
+D('W');
 
   /* check poison of each blocks, if poisoning is enabled */
   if (!CHECK_POISON_ALL_BLOCKS()) {
@@ -1756,6 +1767,7 @@ void umm_free( void *ptr ) {
   }
 
   _umm_free( ptr );
+D('P');
 }
 
 /* ------------------------------------------------------------------------ */

@@ -193,11 +193,14 @@ void init_done() {
 
 */
 
+#define D(y) do { USF(0) = y; USF(0) = '\n'; for (volatile uint32_t x = 0; x < 0xffff; x++) (volatile void)x; } while (0)
+
 extern "C" void ICACHE_RAM_ATTR app_entry_redefinable(void) __attribute__((weak));
 extern "C" void ICACHE_RAM_ATTR app_entry_redefinable(void)
 {
     /* Allocate continuation context on this SYS stack,
        and save pointer to it. */
+D('I');
     cont_t s_cont __attribute__((aligned(16)));
     g_pcont = &s_cont;
 
@@ -209,6 +212,7 @@ static void ICACHE_RAM_ATTR app_entry_custom (void) __attribute__((weakref("app_
 
 extern "C" void ICACHE_RAM_ATTR app_entry (void)
 {
+D('H');
     return app_entry_custom();
 }
 
@@ -235,57 +239,44 @@ extern "C" ICACHE_FLASH_ATTR void user_pre_init (void)
 	{ SYSTEM_PARTITION_PHY_DATA,		PHYDATA_OFFSET,				PHYDATA_SIZE,			},
 	{ SYSTEM_PARTITION_SYSTEM_PARAMETER,	SYSTEM_CONFIG_OFFSET,		SYSTEM_CONFIG_SIZE,		},
         { SYSTEM_PARTITION_CUSTOMER_BEGIN,      0x2000, 0xa000},
-    #if 0
-	{	SYSTEM_PARTITION_CUSTOMER_BEGIN + 0,	USER_CONFIG_OFFSET,			USER_CONFIG_SIZE,		},
-	{	SYSTEM_PARTITION_CUSTOMER_BEGIN + 1,	OFFSET_OTA_BOOT,			SIZE_OTA_BOOT,			},
-	{	SYSTEM_PARTITION_CUSTOMER_BEGIN + 2,	OFFSET_OTA_RBOOT_CFG,		SIZE_OTA_RBOOT_CFG,		},
-	{	SYSTEM_PARTITION_CUSTOMER_BEGIN + 3,	OFFSET_OTA_IMG_0,			SIZE_OTA_IMG,			},
-	{	SYSTEM_PARTITION_CUSTOMER_BEGIN + 4,	OFFSET_OTA_IMG_1,			SIZE_OTA_IMG,			},
-	{	SYSTEM_PARTITION_CUSTOMER_BEGIN + 5,	SEQUENCER_FLASH_OFFSET_0,	SEQUENCER_FLASH_SIZE,	},
-	{	SYSTEM_PARTITION_CUSTOMER_BEGIN + 6,	SEQUENCER_FLASH_OFFSET_1,	SEQUENCER_FLASH_SIZE,	},
-#endif
     };
-  
+
     // serial must be 74880/8n1(crystal@26Mhz) (or? 115200@40Mhz?) to watch debug messages:
     if (!system_partition_table_regist(partitions, sizeof(partitions) / sizeof(partitions[0]), MAP))
     {
         os_printf("system_partition_table_regist: failed\n");
         while(1);
     }
+    
 }
 
 extern "C" ICACHE_FLASH_ATTR void user_init(void) {
 
-    //pinMode(1, FUNCTION_0);
-    GPC(1) = (GPC(1) & (0xF << GPCI)); //SOURCE(GPIO) | DRIVER(NORMAL) | INT_TYPE(UNCHANGED) | WAKEUP_ENABLE(DISABLED)
-    GPEC = (1 << 1); //Disable
-    GPF(1) = GPFFS((UART_TX_ONLY >> 4) & 0x07);
-
-    IOSWAP &= ~(1 << IOSWAPU0);
-    USD(0) = (ESP8266_CLOCK / 115200);
-    USC0(0) = UART_8N1;
-    USC1(0) = 0;
-    USIC(0) = 0xffff;
-    USIE(0) = 0;
-    
-    while (((USS(0) >> USTXC) & 0xff) > 0x7f);
-    USF(0) = '#';
-
-
     struct rst_info *rtc_info_ptr = system_get_rst_info();
     memcpy((void *) &resetInfo, (void *) rtc_info_ptr, sizeof(resetInfo));
 
-    uart_div_modify(0, UART_CLK_FREQ / (115200));
+//    uart_div_modify(0, UART_CLK_FREQ / (115200));
 
     init();
-
     initVariant();
-
     cont_init(g_pcont);
 
+#define XXTASK 0
+#if XXTASK
+    D('X');
     ets_task(loop_task,
         LOOP_TASK_PRIORITY, s_loop_queue,
         LOOP_QUEUE_SIZE);
+    D('Y');
+#else
+(void)s_loop_queue;
+#endif
 
     system_init_done_cb(&init_done);
+
+    D('A');
+    
+#if !XXTASK
+    while (true) loop_task(nullptr);
+#endif
 }

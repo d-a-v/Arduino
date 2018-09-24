@@ -218,6 +218,7 @@ void initPins() {
   U1IE = 0;
 
   for (int i = 0; i <= 5; ++i) {
+if (i != 1)
     pinMode(i, INPUT);
   }
   // pins 6-11 are used for the SPI flash interface

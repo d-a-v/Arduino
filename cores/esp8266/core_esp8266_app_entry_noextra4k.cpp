@@ -22,6 +22,10 @@ void disable_extra4k_at_link_time (void)
 
 /* the following code is linked only if a call to the above function is made somewhere */
 
+#include <Arduino.h>
+#include "Schedule.h"
+#define D(y) do { USF(0) = y; USF(0) = '\n'; for (volatile uint32_t x = 0; x < 0xfffff; x++) (volatile void)x; } while (0)
+
 extern "C" void call_user_start();
 
 /* this is the default NONOS-SDK user's heap location */
@@ -29,6 +33,7 @@ static cont_t g_cont __attribute__ ((aligned (16)));
 
 extern "C" void ICACHE_RAM_ATTR app_entry_redefinable(void)
 {
+D('J');
     g_pcont = &g_cont;
 
     /* Call the entry point of the SDK code. */
