@@ -196,7 +196,7 @@ err_t
 igmp_start(struct netif *netif)
 {
   struct igmp_group* group;
-
+ets_printf(":igmpstart1\n");
   LWIP_DEBUGF(IGMP_DEBUG, ("igmp_start: starting IGMP processing on if %p\n", netif));
 
   group = igmp_lookup_group(netif, &allsystems);
@@ -213,9 +213,11 @@ igmp_start(struct netif *netif)
       netif->igmp_mac_filter(netif, &allsystems, IGMP_ADD_MAC_FILTER);
     }
 
+ets_printf(":igmpstart2\n");
     return ERR_OK;
   }
 
+ets_printf(":igmpstart3\n");
   return ERR_MEM;
 }
 
@@ -330,7 +332,9 @@ igmp_lookup_group(struct netif *ifp, ip_addr_t *addr)
   }
 
   /* Group doesn't exist yet, create a new one */
+ets_printf(":igmp1\n");
   group = (struct igmp_group *)memp_malloc(MEMP_IGMP_GROUP);
+ets_printf(":igmp2\n");
   if (group != NULL) {
     group->netif              = ifp;
     ip_addr_set(&(group->group_address), addr);
@@ -342,10 +346,12 @@ igmp_lookup_group(struct netif *ifp, ip_addr_t *addr)
     
     igmp_group_list = group;
   }
+ets_printf(":igmp3\n");
 
   LWIP_DEBUGF(IGMP_DEBUG, ("igmp_lookup_group: %sallocated a new group with address ", (group?"":"impossible to ")));
   ip_addr_debug_print(IGMP_DEBUG, addr);
   LWIP_DEBUGF(IGMP_DEBUG, (" on if %p\n", ifp));
+ets_printf(":igmp4\n");
 
   return group;
 }

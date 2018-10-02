@@ -311,15 +311,21 @@ lwip_init(void)
  
 #endif /* LWIP_AUTOIP */
 #if LWIP_IGMP
+ets_printf(":lwip-init-1\n");
   igmp_init();
 
 #endif /* LWIP_IGMP */
 #if LWIP_DNS
+ets_printf(":lwip-init-2\n");
   dns_init();
 
 #endif /* LWIP_DNS */
 
 #if LWIP_TIMERS
+ets_printf(":lwip-init-3\n");
   sys_timeouts_init();
 #endif /* LWIP_TIMERS */
+
+ets_printf(":lwip-init-4\n");
+
 }

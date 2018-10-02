@@ -127,12 +127,17 @@ static void loop_wrapper() {
 }
 
 static void loop_task(os_event_t *events) {
+ets_printf(":loop1\n");
     (void) events;
     s_micros_at_task_start = system_get_time();
+ets_printf(":loop2\n");
     cont_run(g_pcont, &loop_wrapper);
+ets_printf(":loop3\n");
     if (cont_check(g_pcont) != 0) {
+ets_printf(":loop4\n");
         panic();
     }
+ets_printf(":loop5\n");
 }
 
 static void do_global_ctors(void) {
@@ -142,10 +147,15 @@ static void do_global_ctors(void) {
 }
 
 void init_done() {
+ets_printf(":initdone1\n");
     system_set_os_print(1);
+ets_printf(":initdone2\n");
     gdb_init();
+ets_printf(":initdone3\n");
     do_global_ctors();
+ets_printf(":initdone4\n");
     esp_schedule();
+ets_printf(":initdone5\n");
 }
 
 /* This is the entry point of the application.
@@ -193,15 +203,13 @@ void init_done() {
 
 */
 
-#define D(y) do { USF(0) = y; USF(0) = '\n'; for (volatile uint32_t x = 0; x < 0xffff; x++) (volatile void)x; } while (0)
-
 extern "C" void ICACHE_RAM_ATTR app_entry_redefinable(void) __attribute__((weak));
 extern "C" void ICACHE_RAM_ATTR app_entry_redefinable(void)
 {
     /* Allocate continuation context on this SYS stack,
        and save pointer to it. */
-D('I');
-    cont_t s_cont __attribute__((aligned(16)));
+ets_printf(":entry2\n");
+   cont_t s_cont __attribute__((aligned(16)));
     g_pcont = &s_cont;
 
     /* Call the entry point of the SDK code. */
@@ -212,7 +220,7 @@ static void ICACHE_RAM_ATTR app_entry_custom (void) __attribute__((weakref("app_
 
 extern "C" void ICACHE_RAM_ATTR app_entry (void)
 {
-D('H');
+ets_printf(":entry1\n");
     return app_entry_custom();
 }
 
@@ -230,6 +238,7 @@ extern "C" ICACHE_FLASH_ATTR void user_pre_init (void)
 #define SYSTEM_CONFIG_OFFSET   0x3fd000
 #define SYSTEM_CONFIG_SIZE     0x3000
 
+//#define MAP 0 // FLASH_SIZE_4M_MAP_512_512    
 #define MAP FLASH_SIZE_32M_MAP_512_512    
 //#define MAP FLASH_SIZE_32M_MAP_1024_1024
     static const partition_item_t partitions[] =
@@ -261,22 +270,27 @@ extern "C" ICACHE_FLASH_ATTR void user_init(void) {
     initVariant();
     cont_init(g_pcont);
 
-#define XXTASK 0
+ets_printf(":user_init\n");
+
+#define XXTASK 1
 #if XXTASK
-    D('X');
     ets_task(loop_task,
         LOOP_TASK_PRIORITY, s_loop_queue,
         LOOP_QUEUE_SIZE);
-    D('Y');
+ets_printf(":user_init_task\n");
 #else
 (void)s_loop_queue;
 #endif
 
     system_init_done_cb(&init_done);
 
-    D('A');
+ets_printf(":user_initdone\n");
     
 #if !XXTASK
+ets_printf(":user_loop_task\n");
     while (true) loop_task(nullptr);
 #endif
+
+ets_printf(":cont:%p\n", g_pcont);
+ets_printf(":malloc:%p\n", malloc(1));
 }

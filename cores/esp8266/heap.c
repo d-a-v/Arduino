@@ -1,3 +1,16 @@
+
+#if 1
+#include <stdint.h>
+#include <c_types.h>
+#include <stdlib.h>
+
+void *_calloc_r(struct _reent *x,size_t nmemb, size_t size) { (void)*x; return calloc(nmemb, size); }
+void *_malloc_r(struct _reent *x,size_t size) {(void)x; return malloc(size); }
+void *_realloc_r(struct _reent *x,void *ptr, size_t size) { (void)x; return realloc(ptr, size); }
+void _free_r(struct _reent *x,void *ptr) { (void)x; free(ptr); }
+#else
+
+
 /* heap.c - overrides of SDK heap handling functions
  * Copyright (c) 2016 Ivan Grokhotkov. All rights reserved.
  * This file is distributed under MIT license.
@@ -189,3 +202,5 @@ void system_show_malloc(void)
 {
     umm_info(NULL, 1);
 }
+
+#endif

@@ -1,8 +1,4 @@
-
-#include "esp8266_peri.h"
-#define D(y) do { USF(0) = y; USF(0) = '\n'; for (volatile uint32_t x = 0; x < 0xffff; x++) (volatile void)x; } while (0)
-
-
+#if 0
 /* ----------------------------------------------------------------------------
  * umm_malloc.c - a memory allocator for embedded systems (microcontrollers)
  *
@@ -1209,6 +1205,7 @@ static unsigned short int umm_assimilate_down( unsigned short int c, unsigned sh
 /* ------------------------------------------------------------------------- */
 
 void umm_init( void ) {
+ets_printf(":umm_init\n");
   /* init heap pointer and size, and memset it to 0 */
   umm_heap = (umm_block *)UMM_MALLOC_CFG__HEAP_ADDR;
   umm_numblocks = (UMM_MALLOC_CFG__HEAP_SIZE / sizeof(umm_block));
@@ -1352,8 +1349,7 @@ static void _umm_free( void *ptr ) {
 /* ------------------------------------------------------------------------ */
 
 static void *_umm_malloc( size_t size ) {
-D('X');
-os_printf("m(%d)", size);
+ets_printf(":umm_malloc(%d)\n", size);
   unsigned short int blocks;
   unsigned short int blockSize = 0;
 
@@ -1478,7 +1474,7 @@ os_printf("m(%d)", size);
   /* Release the critical section... */
   UMM_CRITICAL_EXIT();
 
-os_printf("(%p)", &UMM_DATA(cf));
+ets_printf(":umm_malloc2(%p)\n", &UMM_DATA(cf));
   return( (void *)&UMM_DATA(cf) );
 }
 
@@ -1750,11 +1746,8 @@ void *umm_realloc( void *ptr, size_t size ) {
 /* ------------------------------------------------------------------------ */
 
 void umm_free( void *ptr ) {
-D('Y');
-os_printf("f(%p)", ptr);
-D('Z');
+ets_printf(":free(%p)\n", ptr);
   ptr = GET_UNPOISONED(ptr);
-D('W');
 
   /* check poison of each blocks, if poisoning is enabled */
   if (!CHECK_POISON_ALL_BLOCKS()) {
@@ -1767,7 +1760,7 @@ D('W');
   }
 
   _umm_free( ptr );
-D('P');
+ets_printf(":free2(%p)\n", ptr);
 }
 
 /* ------------------------------------------------------------------------ */
@@ -1787,3 +1780,4 @@ size_t ICACHE_FLASH_ATTR umm_block_size( void ) {
 }
 
 /* ------------------------------------------------------------------------ */
+#endif

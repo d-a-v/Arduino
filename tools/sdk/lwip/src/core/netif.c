@@ -207,6 +207,7 @@ netif_add(struct netif *netif, ip_addr_t *ipaddr, ip_addr_t *netmask,
   LWIP_DEBUGF(NETIF_DEBUG, (" gw "));
   ip_addr_debug_print(NETIF_DEBUG, gw);
   LWIP_DEBUGF(NETIF_DEBUG, ("\n"));
+ets_printf(":netifadd\n");
   return netif;
 }
 

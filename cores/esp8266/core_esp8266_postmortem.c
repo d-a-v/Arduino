@@ -161,12 +161,12 @@ void __wrap_system_restart_local() {
     ets_printf_P("sp: %08x end: %08x offset: %04x\n", sp, stack_end, offset);
 
     print_stack(sp + offset, stack_end);
-
+#if 0
     // Use cap-X formatting to ensure the standard EspExceptionDecoder doesn't match the address
     if (umm_last_fail_alloc_addr) {
       ets_printf_P("\nlast failed alloc call: %08X(%d)\n", (uint32_t)umm_last_fail_alloc_addr, umm_last_fail_alloc_size);
     }
-
+#endif
     custom_crash_callback( &rst_info, sp + offset, stack_end );
 
     delayMicroseconds(10000);
