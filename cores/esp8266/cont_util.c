@@ -27,6 +27,7 @@
 #define CONT_STACKGUARD 0xfeefeffe
 
 void cont_init(cont_t* cont) {
+return;
     memset(cont, 0, sizeof(cont_t));
     
     cont->stack_guard1 = CONT_STACKGUARD;
@@ -42,12 +43,16 @@ void cont_init(cont_t* cont) {
 }
 
 int ICACHE_RAM_ATTR cont_check(cont_t* cont) {
+return 1;
     if(cont->stack_guard1 != CONT_STACKGUARD || cont->stack_guard2 != CONT_STACKGUARD) return 1;
 
     return 0;
 }
 
 int ICACHE_RAM_ATTR cont_get_free_stack(cont_t* cont) {
+#if 1
+	return 100;
+#else
     uint32_t *head = cont->stack;
     int freeWords = 0;
 
@@ -58,9 +63,11 @@ int ICACHE_RAM_ATTR cont_get_free_stack(cont_t* cont) {
     }
     
     return freeWords * 4;
+#endif
 }
 
 bool ICACHE_RAM_ATTR cont_can_yield(cont_t* cont) {
-    return !ETS_INTR_WITHINISR() &&
-           cont->pc_ret != 0 && cont->pc_yield == 0;
+    return !ETS_INTR_WITHINISR();
+//    return !ETS_INTR_WITHINISR() &&
+//           cont->pc_ret != 0 && cont->pc_yield == 0;
 }

@@ -32,8 +32,8 @@ void *operator new(size_t size)
 {
     void *ret = malloc(size);
     if (0 != size && 0 == ret) {
-        umm_last_fail_alloc_addr = __builtin_return_address(0);
-        umm_last_fail_alloc_size = size;
+//        umm_last_fail_alloc_addr = __builtin_return_address(0);
+//        umm_last_fail_alloc_size = size;
     }
     return ret;
 }
@@ -42,8 +42,8 @@ void *operator new[](size_t size)
 {
     void *ret = malloc(size);
     if (0 != size && 0 == ret) {
-        umm_last_fail_alloc_addr = __builtin_return_address(0);
-        umm_last_fail_alloc_size = size;
+//        umm_last_fail_alloc_addr = __builtin_return_address(0);
+//        umm_last_fail_alloc_size = size;
     }
     return ret;
 }

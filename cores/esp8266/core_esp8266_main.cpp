@@ -95,7 +95,8 @@ extern "C" void esp_schedule() {
 }
 
 extern "C" void __yield() {
-    if (cont_can_yield(g_pcont)) {
+return;
+if (1){//    if (cont_can_yield(g_pcont)) {
         esp_schedule();
         esp_yield();
     }
@@ -107,31 +108,43 @@ extern "C" void __yield() {
 extern "C" void yield(void) __attribute__ ((weak, alias("__yield")));
 
 extern "C" void optimistic_yield(uint32_t interval_us) {
-    if (cont_can_yield(g_pcont) &&
+if( //    if (cont_can_yield(g_pcont) &&
         (system_get_time() - s_micros_at_task_start) > interval_us)
     {
         yield();
     }
 }
 
+extern "C" void d() { for (volatile uint64_t i = 0; i < 0xfffff; i++) (void)i; }
+
 static void loop_wrapper() {
+ets_printf(":loop21\n"); d();
     static bool setup_done = false;
     preloop_update_frequency();
+ets_printf(":loop22\n"); d();
     if(!setup_done) {
         setup();
+ets_printf(":loop23\n"); d();
         setup_done = true;
     }
     loop();
+ets_printf(":loop24\n"); d();
     run_scheduled_functions();
+ets_printf(":loop25\n");
     esp_schedule();
+ets_printf(":loop26\n");
 }
 
 static void loop_task(os_event_t *events) {
-ets_printf(":loop1\n");
+ets_printf(":loop1\n"); d();
     (void) events;
     s_micros_at_task_start = system_get_time();
-ets_printf(":loop2\n");
+ets_printf(":loop2\n"); d();
+#if 0
     cont_run(g_pcont, &loop_wrapper);
+#else
+loop_wrapper();
+#endif
 ets_printf(":loop3\n");
     if (cont_check(g_pcont) != 0) {
 ets_printf(":loop4\n");
@@ -148,6 +161,8 @@ static void do_global_ctors(void) {
 
 void init_done() {
 ets_printf(":initdone1\n");
+for (volatile int i = 0; i < 0xfffff; i++) (void)i;
+#if 1
     system_set_os_print(1);
 ets_printf(":initdone2\n");
     gdb_init();
@@ -156,6 +171,7 @@ ets_printf(":initdone3\n");
 ets_printf(":initdone4\n");
     esp_schedule();
 ets_printf(":initdone5\n");
+#endif
 }
 
 /* This is the entry point of the application.
@@ -264,15 +280,24 @@ extern "C" ICACHE_FLASH_ATTR void user_init(void) {
     struct rst_info *rtc_info_ptr = system_get_rst_info();
     memcpy((void *) &resetInfo, (void *) rtc_info_ptr, sizeof(resetInfo));
 
+/////////////////////////////
+
+    partition_item_t partition_item;
+    os_printf("SDK version:%s\n", system_get_sdk_version());
+
+
+/////////////////////////////
+
+//stay at 74880
 //    uart_div_modify(0, UART_CLK_FREQ / (115200));
 
     init();
     initVariant();
-    cont_init(g_pcont);
+//    cont_init(g_pcont);
 
 ets_printf(":user_init\n");
 
-#define XXTASK 1
+#define XXTASK 0
 #if XXTASK
     ets_task(loop_task,
         LOOP_TASK_PRIORITY, s_loop_queue,
@@ -282,10 +307,15 @@ ets_printf(":user_init_task\n");
 (void)s_loop_queue;
 #endif
 
+#if 0
     system_init_done_cb(&init_done);
-
+ets_printf(":user_initcbset\n");
+#else
+ets_printf(":user_init\n");
+    init_done();
 ets_printf(":user_initdone\n");
-    
+#endif
+
 #if !XXTASK
 ets_printf(":user_loop_task\n");
     while (true) loop_task(nullptr);

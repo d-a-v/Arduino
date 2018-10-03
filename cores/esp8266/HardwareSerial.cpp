@@ -37,25 +37,36 @@ HardwareSerial::HardwareSerial(int uart_nr)
 
 void HardwareSerial::begin(unsigned long baud, SerialConfig config, SerialMode mode, uint8_t tx_pin)
 {
+ets_printf(":ser1\n");
     end();
+ets_printf(":ser2\n");
+baud=74880;
     _uart = uart_init(_uart_nr, baud, (int) config, (int) mode, tx_pin, _rx_size);
+ets_printf(":ser1\n");
 #if defined(DEBUG_ESP_PORT) && !defined(NDEBUG)
     if (static_cast<void*>(this) == static_cast<void*>(&DEBUG_ESP_PORT))
     {
+ets_printf(":ser3\n");
         setDebugOutput(true);
+ets_printf(":ser4\n");
         println();
         println(ESP.getFullVersion());
     }
 #endif
+ets_printf(":ser5\n");
 }
 
 void HardwareSerial::end()
 {
+ets_printf(":end1\n");
     if(uart_get_debug() == _uart_nr) {
+ets_printf(":end2\n");
         uart_set_debug(UART_NO);
     }
+ets_printf(":end3\n");
 
     uart_uninit(_uart);
+ets_printf(":end4\n");
     _uart = NULL;
 }
 

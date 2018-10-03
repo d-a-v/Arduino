@@ -717,21 +717,29 @@ uart1_write_char(char c)
 void 
 uart_set_debug(int uart_nr)
 {
+ets_printf(":serdbg1\n");
     s_uart_debug_nr = uart_nr;
     switch(s_uart_debug_nr) 
     {
     case UART0:
+ets_printf(":serdbg2\n");
         system_set_os_print(1);
+ets_printf(":serdbg3\n");
         ets_install_putc1((void *) &uart0_write_char);
+ets_printf(":serdbg4\n");
         break;
     case UART1:
+ets_printf(":serdbg5\n");
         system_set_os_print(1);
         ets_install_putc1((void *) &uart1_write_char);
         break;
     case UART_NO:
     default:
+ets_printf(":serdbg6\n");
         system_set_os_print(0);
+ets_printf(":serdbg7\n");
         ets_install_putc1((void *) &uart_ignore_char);
+ets_printf(":serdbg8\n");
         break;
     }
 }
