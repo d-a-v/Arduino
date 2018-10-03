@@ -115,7 +115,7 @@ if( //    if (cont_can_yield(g_pcont) &&
     }
 }
 
-extern "C" void d() { for (volatile uint64_t i = 0; i < 0xfffff; i++) (void)i; }
+extern "C" void d() { for (volatile uint64_t i = 0; i < 0xffff; i++) (void)i; }
 
 static void loop_wrapper() {
 ets_printf(":loop21\n"); d();
