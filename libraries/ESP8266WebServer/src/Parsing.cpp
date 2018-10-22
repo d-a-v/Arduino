@@ -130,7 +130,7 @@ bool ESP8266WebServer::_parseRequest(WiFiClient& client) {
     String headerName;
     String headerValue;
     bool isForm = false;
-    bool isEncoded = false;
+    //bool isEncoded = false;
     uint32_t contentLength = 0;
     //parse headers
     while(1){
@@ -159,7 +159,7 @@ bool ESP8266WebServer::_parseRequest(WiFiClient& client) {
           isForm = false;
         } else if (headerValue.startsWith(F("application/x-www-form-urlencoded"))){
           isForm = false;
-          isEncoded = true;
+          //isEncoded = true;
         } else if (headerValue.startsWith(F("multipart/"))){
           boundaryStr = headerValue.substring(headerValue.indexOf('=') + 1);
           boundaryStr.replace("\"","");
@@ -172,27 +172,19 @@ bool ESP8266WebServer::_parseRequest(WiFiClient& client) {
       }
     }
 
-#if CORE_VERSION < 24201
-    String plainBuf;
-    if (   !isForm
-        && // read content into plainBuf
-           (   !readBytesWithTimeout(client, contentLength, plainBuf, HTTP_MAX_POST_WAIT)
-            || (plainBuf.length() < contentLength)
-           )
-       )
-    {
-        return false;
-    }
-
-// this was a workaraound, use "plain" key instead
-    if (isEncoded) {
-        // isEncoded => !isForm => plainBuf is not empty
-        // add plainBuf in search str
-        if (searchStr.length())
-          searchStr += '&';
-        searchStr += plainBuf;
-    }
-#endif
+#define CORE_ESP8266_VERSION 24201 // is introduced by #5269
+/*
+ foo: 
+ bar: 
+ lol: 
+ ness: 
+ key: val
+ another: way
+ to: 
+ separate: sobeit
+ {"on": true}: 				<- removed, was a workaround, use key "plain"
+ plain: {"on": true}
+*/
 
     // parse searchStr for key/value pairs
     _parseArguments(searchStr);
@@ -202,16 +194,12 @@ bool ESP8266WebServer::_parseRequest(WiFiClient& client) {
         // add key=value: plain={body} (post json or other data)
         RequestArgument& arg = _currentArgs[_currentArgCount++];
         arg.key = F("plain");
-#if CORE_VERSION >= 24201
         if (   !readBytesWithTimeout(client, contentLength, arg.value, HTTP_MAX_POST_WAIT)
             || (arg.value.length() < contentLength)
            )
         {
             return false;
         }
-#else
-        arg.value = plainBuf;
-#endif
       }
     } else { // isForm is true
       // here: content is not yet read (plainBuf is still empty)

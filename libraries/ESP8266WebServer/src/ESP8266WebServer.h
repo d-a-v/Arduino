@@ -98,13 +98,13 @@ public:
   HTTPUpload& upload() { return *_currentUpload; }
 
   const String& arg(String name) const;    // get request argument value by name
-  const String& arg(int i) const;          // get request argument value by number
+  const String& arg(int i) const __attribute__ ((deprecated("use arg(name)")));     // get request argument value by number
   const String& argName(int i) const;      // get request argument name by number
   int args() const;                        // get arguments count
   bool hasArg(const String& name) const;   // check if argument exists
   void collectHeaders(const char* headerKeys[], const size_t headerKeysCount); // set the request headers to collect
   const String& header(String name) const; // get request header value by name
-  const String& header(int i) const;       // get request header value by number
+  const String& header(int i) const __attribute__ ((deprecated("use header(name)"))); // get request header value by number
   const String& headerName(int i) const;   // get request header name by number
   int headers() const;                     // get header count
   bool hasHeader(String name) const;       // check if header exists
