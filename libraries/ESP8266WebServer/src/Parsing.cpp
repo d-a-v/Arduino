@@ -172,6 +172,7 @@ bool ESP8266WebServer::_parseRequest(WiFiClient& client) {
       }
     }
 
+#if CORE_VERSION < 24201
     String plainBuf;
     if (   !isForm
         && // read content into plainBuf
@@ -183,6 +184,7 @@ bool ESP8266WebServer::_parseRequest(WiFiClient& client) {
         return false;
     }
 
+// this was a workaraound, use "plain" key instead
     if (isEncoded) {
         // isEncoded => !isForm => plainBuf is not empty
         // add plainBuf in search str
@@ -190,6 +192,7 @@ bool ESP8266WebServer::_parseRequest(WiFiClient& client) {
           searchStr += '&';
         searchStr += plainBuf;
     }
+#endif
 
     // parse searchStr for key/value pairs
     _parseArguments(searchStr);
@@ -199,7 +202,16 @@ bool ESP8266WebServer::_parseRequest(WiFiClient& client) {
         // add key=value: plain={body} (post json or other data)
         RequestArgument& arg = _currentArgs[_currentArgCount++];
         arg.key = F("plain");
+#if CORE_VERSION >= 24201
+        if (   !readBytesWithTimeout(client, contentLength, arg.value, HTTP_MAX_POST_WAIT)
+            || (arg.value.length() < contentLength)
+           )
+        {
+            return false;
+        }
+#else
         arg.value = plainBuf;
+#endif
       }
     } else { // isForm is true
       // here: content is not yet read (plainBuf is still empty)
