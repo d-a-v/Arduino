@@ -175,7 +175,7 @@ bool ESP8266WebServer::_parseRequest(WiFiClient& client) {
     if (!isForm) {
       if (!readBytesWithTimeout(client, contentLength, _content, HTTP_MAX_POST_WAIT))
         return false;
-    } else if (isForm) {
+    } else {
       if (!_parseForm(client, boundaryStr, contentLength)) {
         return false;
       }
@@ -377,7 +377,7 @@ bool ESP8266WebServer::_parseForm(WiFiClient& client, const String& boundary, ui
             DEBUG_OUTPUT.println();
 #endif
 
-            _currentArgs[argName] = argValue;
+            _postArgs[argName] = argValue;
 
             if (line == ("--"+boundary+"--")){
 #ifdef DEBUG_ESP_HTTP_SERVER
