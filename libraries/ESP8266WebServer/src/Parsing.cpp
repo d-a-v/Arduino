@@ -377,7 +377,7 @@ bool ESP8266WebServer::_parseForm(WiFiClient& client, const String& boundary, ui
             DEBUG_OUTPUT.println();
 #endif
 
-            _postArgs[argName] = argValue;
+            _currentArgs[argName] = argValue;
 
             if (line == ("--"+boundary+"--")){
 #ifdef DEBUG_ESP_HTTP_SERVER
