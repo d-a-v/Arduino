@@ -26,6 +26,7 @@
 
 #include <functional>
 #include <memory>
+#include <map>
 #include <ESP8266WiFi.h>
 
 enum HTTPMethod { HTTP_ANY, HTTP_GET, HTTP_POST, HTTP_PUT, HTTP_PATCH, HTTP_DELETE, HTTP_OPTIONS };
@@ -109,6 +110,7 @@ public:
   int headers() const;                     // get header count
   bool hasHeader(String name) const;       // check if header exists
   const String& hostHeader() const;        // get request host header if available or empty String if not
+  const String& getContent () const { return _content; } // get content / payload
 
   // send response to the client
   // code - HTTP response code, can be 200 or 404
@@ -141,8 +143,7 @@ protected:
   void _handleRequest();
   void _finalizeResponse();
   bool _parseRequest(WiFiClient& client);
-  void _parseArguments(const String& data);
-  int _parseArgumentsPrivate(const String& data, std::function<void(String&,String&,const String&,int,int,int,int)> handler);
+  int  _parseArguments(const String& data);
   static const String _responseCodeToString(int code);
   bool _parseForm(WiFiClient& client, const String& boundary, uint32_t len);
   bool _parseFormUploadAborted();
@@ -156,11 +157,6 @@ protected:
   static String _getRandomHexString();
   // for extracting Auth parameters
   String _extractParam(String& authReq,const String& param,const char delimit = '"') const;
-
-  struct RequestArgument {
-    String key;
-    String value;
-  };
 
   WiFiServer  _server;
 
@@ -177,12 +173,10 @@ protected:
   THandlerFunction _notFoundHandler;
   THandlerFunction _fileUploadHandler;
 
-  int              _currentArgCount;
-  RequestArgument* _currentArgs;
+  std::map<String,String> _currentArgs;
   std::unique_ptr<HTTPUpload> _currentUpload;
 
-  int              _headerKeysCount;
-  RequestArgument* _currentHeaders;
+  std::map<String,String> _currentHeaders;
   size_t           _contentLength;
   String           _responseHeaders;
 
@@ -192,6 +186,8 @@ protected:
   String           _snonce;  // Store noance and opaque for future comparison
   String           _sopaque;
   String           _srealm;  // Store the Auth realm between Calls
+
+  String           _content; // payload
 
 };
 

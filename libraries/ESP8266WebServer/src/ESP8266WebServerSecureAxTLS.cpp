@@ -72,7 +72,7 @@ ESP8266WebServerSecure::~ESP8266WebServerSecure() {
 void ESP8266WebServerSecure::begin() {
   _currentStatus = HC_NONE;
   _serverSecure.begin();
-  if(!_headerKeysCount)
+  if(!_currentHeaders.size())
     collectHeaders(0, 0);
 }
 

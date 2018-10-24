@@ -51,10 +51,6 @@ ESP8266WebServer::ESP8266WebServer(IPAddress addr, int port)
 , _currentHandler(nullptr)
 , _firstHandler(nullptr)
 , _lastHandler(nullptr)
-, _currentArgCount(0)
-, _currentArgs(nullptr)
-, _headerKeysCount(0)
-, _currentHeaders(nullptr)
 , _contentLength(0)
 , _chunked(false)
 {
@@ -69,10 +65,6 @@ ESP8266WebServer::ESP8266WebServer(int port)
 , _currentHandler(nullptr)
 , _firstHandler(nullptr)
 , _lastHandler(nullptr)
-, _currentArgCount(0)
-, _currentArgs(nullptr)
-, _headerKeysCount(0)
-, _currentHeaders(nullptr)
 , _contentLength(0)
 , _chunked(false)
 {
@@ -80,8 +72,6 @@ ESP8266WebServer::ESP8266WebServer(int port)
 
 ESP8266WebServer::~ESP8266WebServer() {
   _server.close();
-  if (_currentHeaders)
-    delete[]_currentHeaders;
   RequestHandler* handler = _firstHandler;
   while (handler) {
     RequestHandler* next = handler->next();
@@ -336,7 +326,7 @@ void ESP8266WebServer::handleClient() {
 void ESP8266WebServer::close() {
   _server.close();
   _currentStatus = HC_NONE;
-  if(!_headerKeysCount)
+  if (!_currentHeaders.size())
     collectHeaders(0, 0);
 }
 
@@ -492,79 +482,63 @@ void ESP8266WebServer::_streamFileCore(const size_t fileSize, const String & fil
 
 
 const String& ESP8266WebServer::arg(String name) const {
-  for (int i = 0; i < _currentArgCount; ++i) {
-    if ( _currentArgs[i].key == name )
-      return _currentArgs[i].value;
-  }
+  const auto it = _currentArgs.find(name);
+  if (it != _currentArgs.end())
+    return it->second;
   return emptyString;
 }
 
 const String& ESP8266WebServer::arg(int i) const {
-  if (i >= 0 && i < _currentArgCount)
-    return _currentArgs[i].value;
-  return emptyString;
+  return arg(argName(i));
 }
 
 const String& ESP8266WebServer::argName(int i) const {
-  if (i >= 0 && i < _currentArgCount)
-    return _currentArgs[i].key;
+  for (const auto& a: _currentArgs)
+    if (!i--)
+      return a.first;
   return emptyString;
 }
 
 int ESP8266WebServer::args() const {
-  return _currentArgCount;
+  return _currentArgs.size();
 }
 
 bool ESP8266WebServer::hasArg(const String& name) const {
-  for (int i = 0; i < _currentArgCount; ++i) {
-    if (_currentArgs[i].key == name)
-      return true;
-  }
-  return false;
+  return _currentArgs.find(name) != _currentArgs.end();
 }
 
-
 const String& ESP8266WebServer::header(String name) const {
-  for (int i = 0; i < _headerKeysCount; ++i) {
-    if (_currentHeaders[i].key.equalsIgnoreCase(name))
-      return _currentHeaders[i].value;
-  }
+  const auto it = _currentHeaders.find(name);
+  if (it != _currentHeaders.end())
+    return it->second;
   return emptyString;
 }
 
 void ESP8266WebServer::collectHeaders(const char* headerKeys[], const size_t headerKeysCount) {
-  _headerKeysCount = headerKeysCount + 1;
-  if (_currentHeaders)
-     delete[]_currentHeaders;
-  _currentHeaders = new RequestArgument[_headerKeysCount];
-  _currentHeaders[0].key = FPSTR(AUTHORIZATION_HEADER);
-  for (int i = 1; i < _headerKeysCount; i++){
-    _currentHeaders[i].key = headerKeys[i-1];
+  _currentHeaders.clear();
+  _currentHeaders[FPSTR(AUTHORIZATION_HEADER)] = emptyString;
+  for (size_t i = 0; i < headerKeysCount; i++) {
+    _currentHeaders[headerKeys[i]] = emptyString;
   }
 }
 
 const String& ESP8266WebServer::header(int i) const {
-  if (i < _headerKeysCount)
-    return _currentHeaders[i].value;
-  return emptyString;
+  return header(headerName(i));
 }
 
 const String& ESP8266WebServer::headerName(int i) const {
-  if (i < _headerKeysCount)
-    return _currentHeaders[i].key;
+  for (const auto& a: _currentHeaders)
+    if (!i--)
+      return a.first;
   return emptyString;
 }
 
 int ESP8266WebServer::headers() const {
-  return _headerKeysCount;
+  return _currentHeaders.size();
 }
 
 bool ESP8266WebServer::hasHeader(String name) const {
-  for (int i = 0; i < _headerKeysCount; ++i) {
-    if ((_currentHeaders[i].key.equalsIgnoreCase(name)) &&  (_currentHeaders[i].value.length() > 0))
-      return true;
-  }
-  return false;
+  return _currentHeaders.find(name) != _currentHeaders.end();
 }
 
 const String& ESP8266WebServer::hostHeader() const {
