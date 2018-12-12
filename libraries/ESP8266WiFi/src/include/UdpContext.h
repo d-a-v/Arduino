@@ -88,11 +88,21 @@ public:
         }
     }
 
+    bool connect(const IPAddress& addr, uint16_t port)
+    {
+        return connect((const ip_addr_t*)addr, port);
+    }
+
     bool connect(const ip_addr_t* addr, uint16_t port)
     {
         _pcb->remote_ip = *addr;
         _pcb->remote_port = port;
         return true;
+    }
+
+    bool listen(CONST IPAddress& addr, uint16_t port)
+    {
+        return listen((CONST ip_addr_t*)addr, port);
     }
 
     bool listen(CONST ip_addr_t* addr, uint16_t port)
@@ -113,6 +123,11 @@ public:
         udp_set_multicast_netif_addr(_pcb, addr);
     }
 #else
+    void setMulticastInterface(const IPAddress& addr)
+    {
+        udp_set_multicast_netif_addr(_pcb, (const ip_addr_t*)addr);
+    }
+
     void setMulticastInterface(const ip_addr_t* addr)
     {
         udp_set_multicast_netif_addr(_pcb, ip_2_ip4(addr));
