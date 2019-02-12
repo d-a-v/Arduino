@@ -120,7 +120,7 @@ wl_status_t ESP8266WiFiSTAClass::begin(const char* ssid, const char *passphrase,
     }
 
     struct station_config conf;
-    conf.threshold.authmode = (passphraseLen == 0) ? AUTH_OPEN : (_useInsecureWEP ? AUTH_WEP : AUTH_WPA_PSK);
+    conf.threshold.authmode = (passphraseLen == 0) ? AUTH_OPEN : AUTH_WPA_PSK;
 
     if(strlen(ssid) == 32)
         memcpy(reinterpret_cast<char*>(conf.ssid), ssid, 32); //copied in without null term
