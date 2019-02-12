@@ -90,7 +90,6 @@ static bool sta_config_equal(const station_config& lhs, const station_config& rh
 // -----------------------------------------------------------------------------------------------------------------------
 
 bool ESP8266WiFiSTAClass::_useStaticIp = false;
-bool ESP8266WiFiSTAClass::_useInsecureWEP = false;
 
 /**
  * Start Wifi connection
@@ -138,7 +137,6 @@ wl_status_t ESP8266WiFiSTAClass::begin(const char* ssid, const char *passphrase,
     }
 
     conf.threshold.rssi = -127;
-    conf.open_and_wep_mode_disable = !(_useInsecureWEP || *conf.password == 0);
 
     if(bssid) {
         conf.bssid_set = 1;
