@@ -15,19 +15,18 @@ struct scheduled_fn_t
 
 static circular_queue_mp<scheduled_fn_t> schedule_queue(SCHEDULED_FN_MAX_COUNT);
 
-ICACHE_RAM_ATTR // called from ISR
-bool schedule_function_us(mFuncT fn, uint32_t repeat_us)
+bool ICACHE_RAM_ATTR schedule_function_us(std::function<bool(void)>&& fn, uint32_t repeat_us)
 {
     scheduled_fn_t item;
     item.mFunc = fn;
     if (repeat_us) item.callNow.reset(repeat_us);
-    return schedule_queue.push(item);
+    return schedule_queue.push(std::move(item));
 }
 
-ICACHE_RAM_ATTR // called from ISR
-bool schedule_function(std::function<void(void)> fn)
+
+bool ICACHE_RAM_ATTR schedule_function(std::function<void(void)>&& fn)
 {
-    return schedule_function_us([&fn]() { fn(); return false; }, 0);
+    return schedule_function_us([fn]() { fn(); return false; }, 0);
 }
 
 void run_scheduled_functions()
