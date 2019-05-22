@@ -6,7 +6,7 @@
 #define SCHEDULED_FN_MAX_COUNT 32
 #define SCHEDULED_FN_INITIAL_COUNT 4
 
-// This API was not considered stable but is now fossilizing.
+// This API was not considered stable but is now stabilizing.
 // Function signatures may change, queue must stay FIFO.
 // You have been warned.
 
@@ -20,7 +20,9 @@
 bool schedule_function(std::function<void(void)>&& fn);
 bool schedule_function(const std::function<void(void)>& fn);
 
-// Run given function every at least <repeat_us> microseconds until it returns false
+// Run given function periodically about every <repeat_us> microseconds until it returns false.
+// Note that it may be more than <repeat_us> microseconds between calls if `yield` is not called
+// frequently, and therefore should not be used for timing critical operations.
 bool schedule_function_us(std::function<bool(void)>&& fn, uint32_t repeat_us);
 bool schedule_function_us(const std::function<bool(void)>& fn, uint32_t repeat_us);
 
