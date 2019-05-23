@@ -40,10 +40,9 @@ bool ICACHE_RAM_ATTR schedule_function(const std::function<void(void)>& fn)
 
 void run_scheduled_functions()
 {
-    const auto avail = schedule_queue.available();
-    for (size_t i = 0; i < avail; ++i) {
-        auto item = schedule_queue.peek();
-        if (item.callNow && !item.mFunc()) item = schedule_queue.pop();
-        else item = schedule_queue.pop_revenant();
-    }
+    schedule_queue.for_each_revenant([](const scheduled_fn_t& arg)
+        {
+            auto func = arg;
+            return (!func.callNow || func.mFunc());
+        });
 }
