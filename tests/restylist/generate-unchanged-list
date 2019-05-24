@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 force_fetch=false
 
@@ -6,22 +6,29 @@ show_changed_list ()
 {
     while true; do
         read pr
-        #read head
-        #read base
+        
+        git reset --hard HEAD >& /dev/null
+        git checkout -f master >& /dev/null
+        git reset --hard HEAD >& /dev/null
         
         [ -z "$pr" ] && break
     
-        #echo pr=$pr 1>&2
-        #echo head=$head 1>&2
-        #echo base=$base 1>&2
-
         # fetch is forced or branch not existent
         (${force_fetch} || ! git show-branch allmaner-pr-$pr > /dev/null) && \
             (git fetch upstream pull/$pr/head:allmaner-pr-$pr || continue)
 
+        # try to merge
+        git checkout -f allmaner-pr-$pr >& /dev/null
+        git branch -D allmaner-pr-updated-$pr >& /dev/null
+        git checkout -b allmaner-pr-updated-$pr >& /dev/null
+        if ! git merge master >& /dev/null; then
+            echo "PR #$pr is not mergeable"
+            git merge --abort  >& /dev/null
+            continue
+        fi
+
         # get list of modified files
-        #git diff ${base}..allmaner-pr-$pr | sed -nre "s,(\+\+\+|---) [ab]/(.*),$pr:\2,p"
-        git diff master..allmaner-pr-$pr | sed -nre "s,(\+\+\+|---) [ab]/(.*),$pr:\2,p"
+        git diff master..allmaner-pr-updated-$pr | sed -nre "s,(\+\+\+|---) [ab]/(.*),$pr:\2,p"
 
     done < list-pr.txt
 }
@@ -31,10 +38,26 @@ show_changed_list ()
 
 [ -f list.json ] || curl "https://api.github.com/repos/esp8266/arduino/pulls?state=opened&per_page=100" > list.json
 
-# extract pr number and its base branch
+# extract pr number
 sed -Ene 's,.*(url.*/pulls/([0-9]*)\").*,\2,p' < list.json > list-pr.txt
+
+# extract pr number and its base branch
 # json reader might help
 #sed -Ene 's,.*(url.*/pulls/([0-9]*)\"|\"sha\": \"([0-9a-f]*)).*,\2\3,p' < list.json > list-pr+head+base.txt
+
+false && if [ ! -f list-pr-mergeable.txt ]; then
+    rm -f list-pr-conflict.txt list-pr-mergeable.txt
+    for pr in $(cat list-pr.txt); do
+        [ -r .detail-pr-$pr.txt ] && grep exceeded .detail-pr-$pr.txt && rm -f .detail-pr-$pr.txt
+        [ -r .detail-pr-$pr.txt ] || curl https://api.github.com/repos/esp8266/arduino/pulls/$pr > .detail-pr-$pr.txt
+        [ -r .detail-pr-$pr.txt ] && grep exceeded .detail-pr-$pr.txt && rm -f .detail-pr-$pr.txt
+        if grep '"mergeable": false' .detail-pr-$pr.txt; then
+            echo "$pr" >> list-pr-conflict.txt
+        else
+            echo "$pr" >> list-pr-mergeable.txt
+        fi
+    done
+fi
 
 # generate list of changed files across all PRs
 if [ ! -f list-changed.txt ]; then
