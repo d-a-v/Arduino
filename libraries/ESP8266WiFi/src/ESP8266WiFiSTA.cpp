@@ -369,10 +369,25 @@ bool ESP8266WiFiSTAClass::reconnect() {
  * @return  one value of wl_status_t enum
  */
 bool ESP8266WiFiSTAClass::disconnect(bool wifioff) {
-    bool ret;
+    bool ret = false;
     struct station_config conf;
     *conf.ssid = 0;
     *conf.password = 0;
+
+    // API Reference: wifi_station_disconnect() need to be called after system initializes and the ESP8266 Station mode is enabled.
+    if (WiFi.getMode() & WIFI_STA)
+    {
+        station_status_t status = wifi_station_get_connect_status();
+        switch (status)
+        {
+        case STATION_GOT_IP:
+        case STATION_IDLE:
+            ret = wifi_station_disconnect();
+        default:;
+        }
+    }
+    else
+        ret = true;
 
     ETS_UART_INTR_DISABLE();
     if(WiFi._persistent) {
@@ -380,7 +395,7 @@ bool ESP8266WiFiSTAClass::disconnect(bool wifioff) {
     } else {
         wifi_station_set_config_current(&conf);
     }
-    ret = wifi_station_disconnect();
+
     ETS_UART_INTR_ENABLE();
 
     if(wifioff) {

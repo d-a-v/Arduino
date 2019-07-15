@@ -431,15 +431,13 @@ bool ESP8266WiFiGenericClass::enableSTA(bool enable) {
     WiFiMode_t currentMode = getMode();
     bool isEnabled = ((currentMode & WIFI_STA) != 0);
 
-    if(isEnabled != enable) {
-        if(enable) {
-            return mode((WiFiMode_t)(currentMode | WIFI_STA));
-        } else {
-            return mode((WiFiMode_t)(currentMode & (~WIFI_STA)));
-        }
-    } else {
+    if (isEnabled == enable)
         return true;
-    }
+
+    if (enable)
+        return mode((WiFiMode_t)(currentMode | WIFI_STA));
+
+    return mode((WiFiMode_t)(currentMode & (~WIFI_STA)));
 }
 
 /**
