@@ -42,6 +42,8 @@ typedef std::shared_ptr<WiFiEventHandlerOpaque> WiFiEventHandler;
 
 typedef void (*WiFiEventCb)(WiFiEvent_t);
 
+struct wifi_shutdown_state_s;
+
 class ESP8266WiFiGenericClass {
         // ----------------------------------------------------------------------------------------------
         // -------------------------------------- Generic WiFi function ---------------------------------
@@ -79,7 +81,7 @@ class ESP8266WiFiGenericClass {
 
         void persistent(bool persistent);
 
-        bool mode(WiFiMode_t);
+        bool mode(WiFiMode_t, wifi_shutdown_state_s* state = nullptr);
         WiFiMode_t getMode();
 
         bool enableSTA(bool enable);
@@ -88,8 +90,8 @@ class ESP8266WiFiGenericClass {
         bool forceSleepBegin(uint32 sleepUs = 0);
         bool forceSleepWake();
 
-        bool wifiShutdown ();
-        bool wifiResumeFromShutdown ();
+        bool shutdown (uint32 sleepUs = 0, wifi_shutdown_state_s* stateSave = nullptr);
+        bool resumeFromShutdown (const wifi_shutdown_state_s* savedState = nullptr);
         static void preinitWiFiOff (); //meant to be called in user-defined preinit()
 
     protected:

@@ -54,6 +54,14 @@ extern "C" void esp_yield();
 // ------------------------------------------------- Generic WiFi function -----------------------------------------------
 // -----------------------------------------------------------------------------------------------------------------------
 
+struct wifi_shutdown_state_s
+{
+    bool persistent;
+    WiFiMode_t mode;
+    uint8_t channel;
+    station_config fwconfig;
+};
+
 struct WiFiEventHandlerOpaque
 {
     WiFiEventHandlerOpaque(WiFiEvent_t event, std::function<void(System_Event_t*)> handler)
@@ -388,12 +396,12 @@ bool ESP8266WiFiGenericClass::getPersistent(){
  * set new mode
  * @param m WiFiMode_t
  */
-bool ESP8266WiFiGenericClass::mode(WiFiMode_t m) {
+bool ESP8266WiFiGenericClass::mode(WiFiMode_t m, wifi_shutdown_state_s* state) {
     if (m == WIFI_SHUTDOWN) {
-        return wiFiShutdown();
+        return shutdown(0, state);
     }
     else if (m == WIFI_RESUME) {
-        return wiFiResumeFromShutdown();
+        return resumeFromShutdown(state);
     }
     else if (m & ~(WIFI_STA | WIFI_AP))
         // any other bits than legacy disallowed
@@ -611,39 +619,66 @@ void wifi_dns_found_callback(const char *name, CONST ip_addr_t *ipaddr, void *ca
     esp_schedule(); // resume the hostByName function
 }
 
-bool ESP8266WiFiGenericClass::wifiShutdown (uint32 sleepUs = 0, fullstate_t* state)
+bool ESP8266WiFiGenericClass::shutdown (uint32 sleepUs, wifi_shutdown_state_s* state)
 {
-    bool persistent = _persistent;
+    if (_shutdown)
+        return true;
 
+    bool persistent = _persistent;
+    WiFiMode_t before_off_mode = getMode();
+
+    // disable persistence in FW so in case of power failure
+    // it doesn't wake up in off mode.
+    // persistence state wull be restored on WiFi resume.
     WiFi.persistent(false);
-    if (!WiFi.mode(WIFI_OFF))
+    if (!mode(WIFI_OFF))
     {
         WiFi.persistent(persistent);
         return false;
     }
     if (!WiFi.forceSleepBegin(sleepUs))
     {
-        WiFi.mode(_forceSleepLastMode);
+        WiFi.mode(before_off_mode);
         WiFi.persistent(persistent);
         return false;
     }
     if (state)
     {
         state->persistent = persistent;
-        state->mode = _forceSleepLastMode;
+        state->mode = before_off_mode;
+        if (before_off_mode & WIFI_STA)
+        {
+            wifi_station_get_config(&state->fwconfig);
+            state->channel = wifi_get_channel();
+        }
     }
+
+    _shutdown = true;
     return true;
 }
 
-bool ESP8266WiFiGenericClass::wifiResumeFromShutdown (fullstate_t* state)
+bool ESP8266WiFiGenericClass::resumeFromShutdown (const wifi_shutdown_state_s* state)
 {
-    if (!WiFi.forceSleepWake())
+    if (!_shutdown)
+        return true;
+
+    if (!forceSleepWake())
         return false;
+
     if (state)
     {
-        WiFi.persistent(state->persistent);
+        persistent(state->persistent);
+        if (!mode(state->mode))
+            return false;
+        if (state->mode & WIFI_STA)
+        {
+            if (WiFi.begin((const char*)state->fwconfig.ssid, (const char*)state->fwconfig.password, state->channel, (const uint8_t*)state->fwconfig.bssid, true) == WL_CONNECT_FAILED)
+                return false;
+        }
     }
-    return false;
+
+    _shutdown = false;
+    return true;
 }
 
 //meant to be called from user-defined ::preinit()
