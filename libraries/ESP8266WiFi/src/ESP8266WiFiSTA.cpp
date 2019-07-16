@@ -376,16 +376,7 @@ bool ESP8266WiFiSTAClass::disconnect(bool wifioff) {
 
     // API Reference: wifi_station_disconnect() need to be called after system initializes and the ESP8266 Station mode is enabled.
     if (WiFi.getMode() & WIFI_STA)
-    {
-        station_status_t status = wifi_station_get_connect_status();
-        switch (status)
-        {
-        case STATION_GOT_IP:
-        case STATION_IDLE:
-            ret = wifi_station_disconnect();
-        default:;
-        }
-    }
+        ret = wifi_station_disconnect();
     else
         ret = true;
 

@@ -34,7 +34,7 @@
 
 typedef enum WiFiMode 
 {
-    WIFI_OFF = 0, WIFI_STA = 1, WIFI_AP = 2, WIFI_AP_STA = 3
+    WIFI_OFF = 0, WIFI_STA = 1, WIFI_AP = 2, WIFI_AP_STA = 3, WIFI_SHUTDOWN = 4, WIFI_RESUME = 8
 } WiFiMode_t;
 
 typedef enum WiFiPhyMode

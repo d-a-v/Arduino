@@ -38,6 +38,7 @@ extern "C" {
 #include "lwip/opt.h"
 #include "lwip/err.h"
 #include "lwip/dns.h"
+#include "lwip/dhcp.h"
 #include "lwip/init.h" // LWIP_VERSION_
 }
 
@@ -79,6 +80,7 @@ struct WiFiEventHandlerOpaque
 
 static std::list<WiFiEventHandler> sCbEventList;
 
+bool ESP8266WiFiGenericClass::_shutdown = false;
 bool ESP8266WiFiGenericClass::_persistent = true;
 WiFiMode_t ESP8266WiFiGenericClass::_forceSleepLastMode = WIFI_OFF;
 
@@ -387,6 +389,16 @@ bool ESP8266WiFiGenericClass::getPersistent(){
  * @param m WiFiMode_t
  */
 bool ESP8266WiFiGenericClass::mode(WiFiMode_t m) {
+    if (m == WIFI_SHUTDOWN) {
+        return wiFiShutdown();
+    }
+    else if (m == WIFI_RESUME) {
+        return wiFiResumeFromShutdown();
+    }
+    else if (m & ~(WIFI_STA | WIFI_AP))
+        // any other bits than legacy disallowed
+        return false;
+
     if(_persistent){
         if(wifi_get_opmode() == (uint8) m && wifi_get_opmode_default() == (uint8) m){
             return true;
@@ -398,9 +410,10 @@ bool ESP8266WiFiGenericClass::mode(WiFiMode_t m) {
     bool ret = false;
 
     if (m != WIFI_STA && m != WIFI_AP_STA)
-        // calls lwIP's dhcp_stop(),
-        // safe to call even if not started
-        wifi_station_dhcpc_stop();
+        // stop dhcp client on STA
+        for (netif* i = netif_list; i; i = i->next)
+            if (i->num == STATION_IF)
+                dhcp_stop(i); // safe to call even if not started
 
     ETS_UART_INTR_DISABLE();
     if(_persistent) {
@@ -598,7 +611,42 @@ void wifi_dns_found_callback(const char *name, CONST ip_addr_t *ipaddr, void *ca
     esp_schedule(); // resume the hostByName function
 }
 
-//meant to be called from user-defined preinit()
+bool ESP8266WiFiGenericClass::wifiShutdown (uint32 sleepUs = 0, fullstate_t* state)
+{
+    bool persistent = _persistent;
+
+    WiFi.persistent(false);
+    if (!WiFi.mode(WIFI_OFF))
+    {
+        WiFi.persistent(persistent);
+        return false;
+    }
+    if (!WiFi.forceSleepBegin(sleepUs))
+    {
+        WiFi.mode(_forceSleepLastMode);
+        WiFi.persistent(persistent);
+        return false;
+    }
+    if (state)
+    {
+        state->persistent = persistent;
+        state->mode = _forceSleepLastMode;
+    }
+    return true;
+}
+
+bool ESP8266WiFiGenericClass::wifiResumeFromShutdown (fullstate_t* state)
+{
+    if (!WiFi.forceSleepWake())
+        return false;
+    if (state)
+    {
+        WiFi.persistent(state->persistent);
+    }
+    return false;
+}
+
+//meant to be called from user-defined ::preinit()
 void ESP8266WiFiGenericClass::preinitWiFiOff () {
   // https://github.com/esp8266/Arduino/issues/2111#issuecomment-224251391
   // WiFi.persistent(false);
@@ -618,5 +666,6 @@ void ESP8266WiFiGenericClass::preinitWiFiOff () {
   wifi_fpm_open();
   wifi_fpm_do_sleep(0xFFFFFFF);
 
+  _shutdown = true;
   // use WiFi.forceSleepWake() to wake WiFi up
 }
