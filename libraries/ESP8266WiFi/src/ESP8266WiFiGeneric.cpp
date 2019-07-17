@@ -644,6 +644,7 @@ bool ESP8266WiFiGenericClass::shutdown (uint32 sleepUs, wifi_shutdown_state_s* s
             wifi_station_get_config(&state->fwconfig);
             state->channel = wifi_get_channel();
         }
+        state->magic = MAGICSHUTDOWN;
     }
 
     _shutdown = true;
@@ -652,13 +653,10 @@ bool ESP8266WiFiGenericClass::shutdown (uint32 sleepUs, wifi_shutdown_state_s* s
 
 bool ESP8266WiFiGenericClass::resumeFromShutdown (const wifi_shutdown_state_s* state)
 {
-    if (!_shutdown)
-        return true;
-
-    if (!forceSleepWake())
+    if (_shutdown && !forceSleepWake())
         return false;
 
-    if (state)
+    if (state && state->magic == MAGICSHUTDOWN)
     {
         persistent(state->persistent);
         if (!mode(state->mode))

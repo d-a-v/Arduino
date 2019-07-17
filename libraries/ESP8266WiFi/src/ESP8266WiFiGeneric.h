@@ -50,7 +50,9 @@ struct wifi_shutdown_state_s
     WiFiMode_t mode;
     uint8_t channel;
     station_config fwconfig;
+    uint64_t magic;
 };
+#define MAGICSHUTDOWN 0xcafedec1a551f1ed
 
 
 class ESP8266WiFiGenericClass {
