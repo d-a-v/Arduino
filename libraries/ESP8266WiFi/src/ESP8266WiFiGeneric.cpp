@@ -486,7 +486,7 @@ bool ESP8266WiFiGenericClass::forceSleepBegin(uint32 sleepUs) {
         return false;
     }
 
-    if(sleepUs == 0) {
+    if(sleepUs == 0 || sleepUs > 0xFFFFFFF) {
         sleepUs = 0xFFFFFFF;
     }
 
