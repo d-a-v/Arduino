@@ -408,13 +408,6 @@ bool ESP8266WiFiGenericClass::mode(WiFiMode_t m, wifi_shutdown_state_s* state) {
     }
 
     bool ret = false;
-
-    if (m != WIFI_STA && m != WIFI_AP_STA)
-        // stop dhcp client on STA
-        for (netif* i = netif_list; i; i = i->next)
-            if (i->num == STATION_IF)
-                dhcp_stop(i); // safe to call even if not started
-
     ETS_UART_INTR_DISABLE();
     if(_persistent) {
         ret = wifi_set_opmode(m);
