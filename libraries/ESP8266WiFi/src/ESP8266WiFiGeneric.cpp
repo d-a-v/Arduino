@@ -492,7 +492,15 @@ bool ESP8266WiFiGenericClass::forceSleepBegin(uint32 sleepUs) {
 
     wifi_fpm_set_sleep_type(MODEM_SLEEP_T);
     wifi_fpm_open();
-    return (wifi_fpm_do_sleep(sleepUs) == 0);
+    if (wifi_fpm_do_sleep(sleepUs) == 0)
+    {
+        // fpm_is_open() is always 1 here, with or without delay
+        // wifi_fpm_set_wakeup_cb(cb): callback is never called
+        // no power reduction without this delay
+        delay(10);
+        return true;
+    }
+    return false;
 }
 
 /**
