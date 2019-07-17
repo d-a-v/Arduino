@@ -54,14 +54,6 @@ extern "C" void esp_yield();
 // ------------------------------------------------- Generic WiFi function -----------------------------------------------
 // -----------------------------------------------------------------------------------------------------------------------
 
-struct wifi_shutdown_state_s
-{
-    bool persistent;
-    WiFiMode_t mode;
-    uint8_t channel;
-    station_config fwconfig;
-};
-
 struct WiFiEventHandlerOpaque
 {
     WiFiEventHandlerOpaque(WiFiEvent_t event, std::function<void(System_Event_t*)> handler)

@@ -43,6 +43,15 @@ typedef std::shared_ptr<WiFiEventHandlerOpaque> WiFiEventHandler;
 typedef void (*WiFiEventCb)(WiFiEvent_t);
 
 struct wifi_shutdown_state_s;
+#include <user_interface.h>
+struct wifi_shutdown_state_s
+{
+    bool persistent;
+    WiFiMode_t mode;
+    uint8_t channel;
+    station_config fwconfig;
+};
+
 
 class ESP8266WiFiGenericClass {
         // ----------------------------------------------------------------------------------------------
