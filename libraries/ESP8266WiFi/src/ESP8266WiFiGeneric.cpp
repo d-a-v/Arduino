@@ -620,6 +620,13 @@ bool ESP8266WiFiGenericClass::shutdown (uint32 sleepUs, wifi_shutdown_state_s* s
     bool persistent = _persistent;
     WiFiMode_t before_off_mode = getMode();
 
+    if ((before_off_mode & WIFI_STA) && state)
+    {
+        wifi_get_ip_info(STATION_IF, &state->ip);
+        wifi_station_get_config(&state->fwconfig);
+        state->channel = wifi_get_channel();
+    }
+
     // disable persistence in FW so in case of power failure
     // it doesn't wake up in off mode.
     // persistence state wull be restored on WiFi resume.
@@ -639,34 +646,54 @@ bool ESP8266WiFiGenericClass::shutdown (uint32 sleepUs, wifi_shutdown_state_s* s
     {
         state->persistent = persistent;
         state->mode = before_off_mode;
-        if (before_off_mode & WIFI_STA)
-        {
-            wifi_station_get_config(&state->fwconfig);
-            state->channel = wifi_get_channel();
-        }
-        state->magic = MAGICSHUTDOWN;
+        ::printf("YYYmode=%d\n", state->mode);
+        state->magic = (before_off_mode & WIFI_STA)? MAGICSHUTDOWN: 0xdeadbeef;
     }
 
     _shutdown = true;
     return true;
 }
 
-bool ESP8266WiFiGenericClass::resumeFromShutdown (const wifi_shutdown_state_s* state)
+bool ESP8266WiFiGenericClass::resumeFromShutdown (wifi_shutdown_state_s* state)
 {
     if (_shutdown && !forceSleepWake())
         return false;
 
     if (state && state->magic == MAGICSHUTDOWN)
     {
+        state->magic = 0;
+
+        ::printf("XXXpersistent=%d\n", state->persistent);
+        ::printf("XXXmode=%d\n", state->mode);
         persistent(state->persistent);
         if (!mode(state->mode))
+        {
+            ::printf("XXXmode=%d failed\n", state->mode);
             return false;
+        }
         if (state->mode & WIFI_STA)
         {
-            if (WiFi.begin((const char*)state->fwconfig.ssid, (const char*)state->fwconfig.password, state->channel, (const uint8_t*)state->fwconfig.bssid, true) == WL_CONNECT_FAILED)
+            ::printf("XXXSTA (%s)(%d)(%02x:%02x:%02x:%02x:%02x:%02x)(%s / %s / %s)\n", (const char*)state->fwconfig.ssid, state->channel,
+                state->fwconfig.bssid[0],
+                state->fwconfig.bssid[1],
+                state->fwconfig.bssid[2],
+                state->fwconfig.bssid[3],
+                state->fwconfig.bssid[4],
+                state->fwconfig.bssid[5],
+                IPAddress(state->ip.ip_address).toString().c_str(),
+                IPAddress(state->ip.mask).toString().c_str(),
+                IPAddress(state->ip.gw).toString().c_str(),
+            );
+            if (WiFi.begin((const char*)state->fwconfig.ssid, (const char*)state->fwconfig.password, state->channel, nullptr/*(const uint8_t*)state->fwconfig.bssid*/, true) == WL_CONNECT_FAILED)
+            {
+                ::printf("XXXSTA failed\n");
                 return false;
+            }
         }
+        ::printf("XXXSTA OK\n");
     }
+    else
+        ::printf("XXXNOSHUTDOWN\n");
 
     _shutdown = false;
     return true;
