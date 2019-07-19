@@ -5,6 +5,8 @@
  *      Author: liuhan
  */
 
+#include <stdlib.h> // abort()
+
 #include "lwip/memp.h"
 #include "lwip/def.h"
 #include "ets_sys.h"
@@ -20,7 +22,7 @@ static const char mem_debug_file[] ICACHE_RODATA_ATTR = __FILE__;
 #define lwIP_unlikely(Expression) !!(Expression)
 #endif
 
-#define lwIP_ASSERT(Expression)	do{if(!(Expression)) {os_printf("%s %d\n", __func__, __LINE__);return;}}while(0)
+#define lwIP_ASSERT(Expression)	do{if(!(Expression)) {os_printf("%s %d\n", __func__, __LINE__);abort();}}while(0)
 
 ringbuf_t ringbuf_new(size_t capacity)
 {

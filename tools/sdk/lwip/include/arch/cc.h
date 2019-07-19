@@ -84,9 +84,21 @@ typedef unsigned long   mem_ptr_t;
 #define LWIP_PLATFORM_ASSERT(x)
 #endif
 
-#define SYS_ARCH_DECL_PROTECT(x)
-#define SYS_ARCH_PROTECT(x)
-#define SYS_ARCH_UNPROTECT(x)
+#if 0
+#include "core_esp8266_features.h"
+#define SYS_ARCH_DECL_PROTECT(lev) uint32_t lev
+#define SYS_ARCH_PROTECT(lev) lev = xt_rsil(15)
+#define SYS_ARCH_UNPROTECT(lev) xt_wsr_ps(lev)
+#else
+#ifndef __STRINGIFY
+#define __STRINGIFY(a) #a
+#endif
+#define lwip_xt_rsil(level) (__extension__({uint32_t state; __asm__ __volatile__("rsil %0," __STRINGIFY(level) : "=a" (state) :: "memory"); state;}))
+#define lwip_xt_wsr_ps(state)  __asm__ __volatile__("wsr %0,ps; isync" :: "a" (state) : "memory")
+#define SYS_ARCH_DECL_PROTECT(lev) uint32_t lev
+#define SYS_ARCH_PROTECT(lev) lev = lwip_xt_rsil(15)
+#define SYS_ARCH_UNPROTECT(lev) lwip_xt_wsr_ps(lev)
+#endif
 
 #define LWIP_PLATFORM_BYTESWAP 1
 #define LWIP_PLATFORM_HTONS(_n)  ((u16_t)((((_n) & 0xff) << 8) | (((_n) >> 8) & 0xff)))
