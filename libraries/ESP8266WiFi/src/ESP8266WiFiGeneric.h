@@ -46,12 +46,18 @@ struct wifi_shutdown_state_s;
 #include <user_interface.h>
 struct wifi_shutdown_state_s
 {
-    bool persistent;
-    WiFiMode_t mode;
-    uint8_t channel;
-    station_config fwconfig;
-    ip_info ip;
-    uint64_t magic;
+    uint32_t crc;
+    struct
+    {
+        bool persistent;
+        WiFiMode_t mode;
+        uint8_t channel;
+        station_config fwconfig;
+        ip_info ip;
+        uint64_t magic;
+        ip_addr_t dns[2];
+        ip_addr_t ntp[2];
+    } state;
 };
 #define MAGICSHUTDOWN 0xcafedec1a551f1ed
 
@@ -104,6 +110,8 @@ class ESP8266WiFiGenericClass {
 
         bool shutdown (uint32 sleepUs = 0, wifi_shutdown_state_s* stateSave = nullptr);
         bool resumeFromShutdown (wifi_shutdown_state_s* savedState = nullptr);
+        uint32_t shutdownCRC (const wifi_shutdown_state_s* state) const;
+        bool shutdownValidCRC (const wifi_shutdown_state_s* state) const;
         static void preinitWiFiOff (); //meant to be called in user-defined preinit()
 
     protected:

@@ -24,6 +24,7 @@
 
 #include <list>
 #include <string.h>
+#include <coredecls.h>
 #include "ESP8266WiFi.h"
 #include "ESP8266WiFiGeneric.h"
 
@@ -39,6 +40,7 @@ extern "C" {
 #include "lwip/err.h"
 #include "lwip/dns.h"
 #include "lwip/dhcp.h"
+#include "lwip/apps/sntp.h"
 #include "lwip/init.h" // LWIP_VERSION_
 }
 
@@ -612,6 +614,16 @@ void wifi_dns_found_callback(const char *name, CONST ip_addr_t *ipaddr, void *ca
     esp_schedule(); // resume the hostByName function
 }
 
+uint32_t ESP8266WiFiGenericClass::shutdownCRC (const wifi_shutdown_state_s* state) const
+{
+    return state? crc32(&state->state, sizeof(state->state)): 0;
+}
+
+bool ESP8266WiFiGenericClass::shutdownValidCRC (const wifi_shutdown_state_s* state) const
+{
+    return state && (crc32(&state->state, sizeof(state->state)) == state->crc);
+}
+
 bool ESP8266WiFiGenericClass::shutdown (uint32 sleepUs, wifi_shutdown_state_s* state)
 {
     if (_shutdown)
@@ -622,9 +634,20 @@ bool ESP8266WiFiGenericClass::shutdown (uint32 sleepUs, wifi_shutdown_state_s* s
 
     if ((before_off_mode & WIFI_STA) && state)
     {
-        wifi_get_ip_info(STATION_IF, &state->ip);
-        wifi_station_get_config(&state->fwconfig);
-        state->channel = wifi_get_channel();
+        bool ret = wifi_get_ip_info(STATION_IF, &state->state.ip);
+        ::printf("get-ip-info=%d\n", ret);
+        memset(state->state.fwconfig.bssid, 0xff, 6);
+        ret = wifi_station_get_config(&state->state.fwconfig);
+        ::printf("get-config=%d\n", ret);
+            ::printf("XXXBSSID %d (%02x:%02x:%02x:%02x:%02x:%02x)\n",
+                state->state.fwconfig.bssid_set,
+                state->state.fwconfig.bssid[0],
+                state->state.fwconfig.bssid[1],
+                state->state.fwconfig.bssid[2],
+                state->state.fwconfig.bssid[3],
+                state->state.fwconfig.bssid[4],
+                state->state.fwconfig.bssid[5]);
+        state->state.channel = wifi_get_channel();
     }
 
     // disable persistence in FW so in case of power failure
@@ -644,10 +667,15 @@ bool ESP8266WiFiGenericClass::shutdown (uint32 sleepUs, wifi_shutdown_state_s* s
     }
     if (state)
     {
-        state->persistent = persistent;
-        state->mode = before_off_mode;
-        ::printf("YYYmode=%d\n", state->mode);
-        state->magic = (before_off_mode & WIFI_STA)? MAGICSHUTDOWN: 0xdeadbeef;
+        state->state.persistent = persistent;
+        state->state.mode = before_off_mode;
+        ::printf("YYYmode=%d\n", state->state.mode);
+        uint8_t i = 0;
+        for (auto& ntp: state->state.ntp)
+            ntp = *sntp_getserver(i++);
+        for (auto& dns: state->state.dns)
+            dns = WiFi.dnsIP();
+        state->crc = shutdownCRC(state);
     }
 
     _shutdown = true;
@@ -659,32 +687,42 @@ bool ESP8266WiFiGenericClass::resumeFromShutdown (wifi_shutdown_state_s* state)
     if (_shutdown && !forceSleepWake())
         return false;
 
-    if (state && state->magic == MAGICSHUTDOWN)
+    if (state && shutdownCRC(state) == state->crc)
     {
-        state->magic = 0;
-
-        ::printf("XXXpersistent=%d\n", state->persistent);
-        ::printf("XXXmode=%d\n", state->mode);
-        persistent(state->persistent);
-        if (!mode(state->mode))
+        ::printf("XXXpersistent=%d\n", state->state.persistent);
+        ::printf("XXXmode=%d\n", state->state.mode);
+        persistent(state->state.persistent);
+        if (!mode(state->state.mode))
         {
-            ::printf("XXXmode=%d failed\n", state->mode);
+            ::printf("XXXmode=%d failed\n", state->state.mode);
             return false;
         }
-        if (state->mode & WIFI_STA)
+        if (state->state.mode & WIFI_STA)
         {
-            ::printf("XXXSTA (%s)(%d)(%02x:%02x:%02x:%02x:%02x:%02x)(%s / %s / %s)\n", (const char*)state->fwconfig.ssid, state->channel,
-                state->fwconfig.bssid[0],
-                state->fwconfig.bssid[1],
-                state->fwconfig.bssid[2],
-                state->fwconfig.bssid[3],
-                state->fwconfig.bssid[4],
-                state->fwconfig.bssid[5],
-                IPAddress(state->ip.ip_address).toString().c_str(),
-                IPAddress(state->ip.mask).toString().c_str(),
-                IPAddress(state->ip.gw).toString().c_str(),
+            ::printf("XXXSTA (%s)(%d)(%02x:%02x:%02x:%02x:%02x:%02x)(%s / %s / %s)(dns %s %s)(ntp %s %s)\n", (const char*)state->state.fwconfig.ssid, state->state.channel,
+                state->state.fwconfig.bssid[0],
+                state->state.fwconfig.bssid[1],
+                state->state.fwconfig.bssid[2],
+                state->state.fwconfig.bssid[3],
+                state->state.fwconfig.bssid[4],
+                state->state.fwconfig.bssid[5],
+                IPAddress(state->state.ip.ip).toString().c_str(),
+                IPAddress(state->state.ip.netmask).toString().c_str(),
+                IPAddress(state->state.ip.gw).toString().c_str(),
+                IPAddress(state->state.dns[0]).toString().c_str(),
+                IPAddress(state->state.dns[1]).toString().c_str(),
+                IPAddress(state->state.ntp[0]).toString().c_str(),
+                IPAddress(state->state.ntp[1]).toString().c_str()
             );
-            if (WiFi.begin((const char*)state->fwconfig.ssid, (const char*)state->fwconfig.password, state->channel, nullptr/*(const uint8_t*)state->fwconfig.bssid*/, true) == WL_CONNECT_FAILED)
+            IPAddress local(state->state.ip.ip);
+            if (local)
+            {
+                WiFi.config(state->state.ip.ip, state->state.ip.netmask, state->state.ip.gw, state->state.dns[0], state->state.dns[1]);
+                uint8_t i = 0;
+                for (const auto& ntp: state->state.ntp)
+                    sntp_setserver(i++, &ntp);
+            }
+            if (WiFi.begin((const char*)state->state.fwconfig.ssid, (const char*)state->state.fwconfig.password, state->state.channel, nullptr/*(const uint8_t*)state->state.fwconfig.bssid*/, true) == WL_CONNECT_FAILED)
             {
                 ::printf("XXXSTA failed\n");
                 return false;
