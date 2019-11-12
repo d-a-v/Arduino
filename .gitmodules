@@ -19,3 +19,6 @@
 [submodule "tools/esptool"]
 	path = tools/esptool
 	url = https://github.com/espressif/esptool.git
+[submodule "tools/sdk/uz/uzlib"]
+	path = tools/sdk/uz/uzlib
+	url = git@github.com:d-a-v/uzlib.git
