@@ -245,7 +245,7 @@ bool clsLEAMDNSHost::begin(const char* p_pcHostName,
     bool    bResult = false;
 
     if (!((bResult = ((setHostName(p_pcHostName)) &&
-                      ((m_pNetIf = p_pNetIf)) &&
+                      //can be nullptr! ((m_pNetIf = p_pNetIf)) &&
                       (_joinMulticastGroups()) &&
                       (p_fnCallback ? setProbeResultCallback(p_fnCallback) : true) &&
                       ((m_pUDPContext = _allocBackbone())) &&
@@ -281,13 +281,9 @@ bool clsLEAMDNSHost::begin(const char* p_pcHostName,
 
     bool bResult = false;
 
-    if (p_WiFiMode == WIFI_STA)
+    if (p_WiFiMode == WIFI_STA || p_WiFiMode == WIFI_AP)
     {
-        bResult = begin(p_pcHostName, netif_get_by_index(WIFI_STA), p_fnCallback);
-    }
-    else if (p_WiFiMode == WIFI_AP)
-    {
-        bResult = begin(p_pcHostName, netif_get_by_index(WIFI_AP), p_fnCallback);
+        bResult = begin(p_pcHostName, netif_get_by_index(p_WiFiMode), p_fnCallback);
     }
     else
     {
@@ -857,16 +853,41 @@ bool clsLEAMDNSHost::_joinMulticastGroups(void)
     // Join multicast group(s)
     if (m_pNetIf)
     {
+        bResult = _joinMulticastGroups(m_pNetIf);
+    }
+    else
+    {
+        for (netif* p_netif = netif_list; p_netif; p_netif = p_netif->next)
+        {
+            if (netif_is_up(p_netif) && _joinMulticastGroups(p_netif))
+            {
+                bResult = true;
+            }
+        }
+    }
+    return bResult;
+}
+    
+/*
+    clsLEAmDNS2_Host::_joinMulticastGroups
+*/
+bool clsLEAMDNSHost::_joinMulticastGroups(netif* p_pNetIf)
+{
+    bool    bResult = false;
+
+    // Join multicast group(s)
+    if (p_pNetIf)
+    {
         bResult = true;
 
 #ifdef MDNS_IPV4_SUPPORT
         ip_addr_t   multicast_addr_V4 = DNS_MQUERY_IPV4_GROUP_INIT;
-        if (!(m_pNetIf->flags & NETIF_FLAG_IGMP))
+        if (!(p_pNetIf->flags & NETIF_FLAG_IGMP))
         {
             DEBUG_EX_ERR(DEBUG_OUTPUT.printf_P(PSTR("%s _createHost: Setting flag: flags & NETIF_FLAG_IGMP\n"), _DH()););
-            m_pNetIf->flags |= NETIF_FLAG_IGMP;
+            p_pNetIf->flags |= NETIF_FLAG_IGMP;
 
-            if (ERR_OK != igmp_start(m_pNetIf))
+            if (ERR_OK != igmp_start(p_pNetIf))
             {
                 DEBUG_EX_ERR(DEBUG_OUTPUT.printf_P(PSTR("%s _createHost: igmp_start FAILED!\n"), _DH()););
             }
@@ -874,9 +895,9 @@ bool clsLEAMDNSHost::_joinMulticastGroups(void)
 
         bResult = ((bResult) &&
 #if LWIP_VERSION_MAJOR == 1
-                   (ERR_OK == igmp_joingroup(ip_2_ip4(&m_pNetIf->ip_addr), ip_2_ip4(&multicast_addr_V4))));
+                   (ERR_OK == igmp_joingroup(ip_2_ip4(&p_pNetIf->ip_addr), ip_2_ip4(&multicast_addr_V4))));
 #else
-                   (ERR_OK == igmp_joingroup_netif(m_pNetIf, ip_2_ip4(&multicast_addr_V4))));
+                   (ERR_OK == igmp_joingroup_netif(p_pNetIf, ip_2_ip4(&multicast_addr_V4))));
 #endif
         DEBUG_EX_ERR(if (!bResult) DEBUG_OUTPUT.printf_P(PSTR("%s _createHost: igmp_joingroup_netif(%s) FAILED!\n"), _DH(), IPAddress(multicast_addr_V4).toString().c_str()););
 #endif
@@ -884,7 +905,7 @@ bool clsLEAMDNSHost::_joinMulticastGroups(void)
 #ifdef MDNS_IPV6_SUPPORT
         ip_addr_t   multicast_addr_V6 = DNS_MQUERY_IPV6_GROUP_INIT;
         bResult = ((bResult) &&
-                   (ERR_OK == mld6_joingroup_netif(m_pNetIf, ip_2_ip6(&multicast_addr_V6))));
+                   (ERR_OK == mld6_joingroup_netif(p_pNetIf, ip_2_ip6(&multicast_addr_V6))));
         DEBUG_EX_ERR(if (!bResult) DEBUG_OUTPUT.printf_P(PSTR("%s _createHost: mld6_joingroup_netif FAILED!\n"), _DH()););
 #endif
     }
@@ -900,6 +921,30 @@ bool clsLEAMDNSHost::_leaveMulticastGroups(void)
 
     if (m_pNetIf)
     {
+        bResult = _leaveMulticastGroups(m_pNetIf);
+    }
+    else
+    {
+        for (netif* p_netif = netif_list; p_netif; p_netif = p_netif->next)
+        {
+            if (_leaveMulticastGroups(p_netif))
+            {
+                bResult = true;
+            }
+        }
+    }
+    return bResult;
+}
+
+/*
+    clsLEAmDNS2_Host::_leaveMulticastGroups
+*/
+bool clsLEAMDNSHost::_leaveMulticastGroups(netif* p_pNetif)
+{
+    bool    bResult = false;
+
+    if (p_pNetIf)
+    {
         bResult = true;
         /*  _resetProbeStatus(false);   // Stop probing
 
@@ -911,9 +956,9 @@ bool clsLEAMDNSHost::_leaveMulticastGroups(void)
 #ifdef MDNS_IPV4_SUPPORT
         ip_addr_t   multicast_addr_V4 = DNS_MQUERY_IPV4_GROUP_INIT;
 #if LWIP_VERSION_MAJOR == 1
-        if (ERR_OK != igmp_leavegroup(ip_2_ip4(&m_rNetIf.ip_addr), ip_2_ip4(&multicast_addr_V4)))
+        if (ERR_OK != igmp_leavegroup(ip_2_ip4(&p_pNetIf.ip_addr), ip_2_ip4(&multicast_addr_V4)))
 #else
-        if (ERR_OK != igmp_leavegroup_netif(m_pNetIf, ip_2_ip4(&multicast_addr_V4)))
+        if (ERR_OK != igmp_leavegroup_netif(p_pNetIf, ip_2_ip4(&multicast_addr_V4)))
 #endif
         {
             DEBUG_EX_ERR(DEBUG_OUTPUT.printf_P(PSTR("\n")););
@@ -921,7 +966,7 @@ bool clsLEAMDNSHost::_leaveMulticastGroups(void)
 #endif
 #ifdef MDNS_IPV6_SUPPORT
         ip_addr_t   multicast_addr_V6 = DNS_MQUERY_IPV6_GROUP_INIT;
-        if (ERR_OK != mld6_leavegroup_netif(m_pNetIf, ip_2_ip6(&multicast_addr_V6)/*&(multicast_addr_V6.u_addr.ip6)*/))
+        if (ERR_OK != mld6_leavegroup_netif(p_pNetIf, ip_2_ip6(&multicast_addr_V6)/*&(multicast_addr_V6.u_addr.ip6)*/))
         {
             DEBUG_EX_ERR(DEBUG_OUTPUT.printf_P(PSTR("\n")););
         }

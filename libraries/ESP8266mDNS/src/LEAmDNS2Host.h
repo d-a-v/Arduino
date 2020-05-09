@@ -1357,6 +1357,8 @@ protected:
 
     bool _joinMulticastGroups(void);
     bool _leaveMulticastGroups(void);
+    bool _joinMulticastGroups(netif* p_netif);
+    bool _leaveMulticastGroups(netif* p_netif);
 
     // NETIF
     typeNetIfState _getNetIfState(void) const;
