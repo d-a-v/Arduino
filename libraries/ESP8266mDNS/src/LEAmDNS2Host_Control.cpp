@@ -207,34 +207,20 @@ bool clsLEAMDNSHost::_parseQuery(const clsLEAMDNSHost::clsMsgHeader& p_MsgHeader
                     // We're a match for this legacy query, BUT
                     // make sure, that the query comes from a local host
 #ifdef MDNS_IPV4_SUPPORT
-                    ip_info IPInfo_Local;
+                    //ip_info IPInfo_Local;
 #endif
-                    if ((m_pNetIf) &&
-                            (m_pUDPContext) &&
+                    if ((m_pUDPContext)
 #ifdef MDNS_IPV4_SUPPORT
-                            (m_pUDPContext->getRemoteAddress().isV4()) &&
-                            ((wifi_get_ip_info(netif_get_index(m_pNetIf), &IPInfo_Local))) &&
-                            (ip4_addr_netcmp(ip_2_ip4((const ip_addr_t*)m_pUDPContext->getRemoteAddress()), &IPInfo_Local.ip, &IPInfo_Local.netmask))
-#else
-                            (true)
+                            && (m_pUDPContext->getRemoteAddress().isV4())
+                            //&& ((wifi_get_ip_info(netif_get_index(m_pNetIf), &IPInfo_Local)))
+                            //&& (ip4_addr_netcmp(ip_2_ip4((const ip_addr_t*)m_pUDPContext->getRemoteAddress()), &IPInfo_Local.ip, &IPInfo_Local.netmask))
 #endif
-                            &&
 #ifdef MDNS_IPV6_SUPPORT
-                            (m_pUDPContext->getRemoteAddress().isV6()) &&
-                            (ip6_addr_islinklocal(ip_2_ip6((const ip_addr_t*)m_pUDPContext->getRemoteAddress())))
-#else
-                            (true)
+                            && (m_pUDPContext->getRemoteAddress().isV6())
+                            && (ip6_addr_islinklocal(ip_2_ip6((const ip_addr_t*)m_pUDPContext->getRemoteAddress())))
 #endif
                        )
                     {
-                        /*  ip_info IPInfo_Local;
-                            ip_info IPInfo_Remote;
-                            if (((IPInfo_Remote.ip.addr = m_pUDPContext->getRemoteAddress())) &&
-                            (((wifi_get_ip_info(SOFTAP_IF, &IPInfo_Local)) &&
-                              (ip4_addr_netcmp(&IPInfo_Remote.ip, &IPInfo_Local.ip, &IPInfo_Local.netmask))) ||  // Remote IP in SOFTAP's subnet OR
-                             ((wifi_get_ip_info(STATION_IF, &IPInfo_Local)) &&
-                              (ip4_addr_netcmp(&IPInfo_Remote.ip, &IPInfo_Local.ip, &IPInfo_Local.netmask)))))   // Remote IP in STATION's subnet
-                            {*/
                         Serial.println("\n\n\nUNICAST QUERY\n\n");
                         DEBUG_EX_RX(DEBUG_OUTPUT.printf_P(PSTR("%s _parseQuery: Legacy DNS query from local host %s!\n"), _DH(), m_pUDPContext->getRemoteAddress().toString().c_str()););
 

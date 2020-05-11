@@ -205,8 +205,7 @@ const char* clsLEAMDNSHost::clsConsts::pcReverseTopDomain             = "arpa";
 
 */
 clsLEAMDNSHost::clsLEAMDNSHost(void)
-    :   m_pNetIf(0),
-        m_NetIfState(static_cast<typeNetIfState>(enuNetIfState::None)),
+    :   //m_NetIfState(static_cast<typeNetIfState>(enuNetIfState::None)),
         m_pUDPContext(0),
         m_pcHostName(0),
         m_pcDefaultInstanceName(0),
@@ -245,7 +244,6 @@ bool clsLEAMDNSHost::begin(const char* p_pcHostName,
     bool    bResult = false;
 
     if (!((bResult = ((setHostName(p_pcHostName)) &&
-                      //can be nullptr! ((m_pNetIf = p_pNetIf)) &&
                       (_joinMulticastGroups()) &&
                       (p_fnCallback ? setProbeResultCallback(p_fnCallback) : true) &&
                       ((m_pUDPContext = _allocBackbone())) &&
@@ -846,23 +844,16 @@ bool clsLEAMDNSHost::_releaseBackbone(void)
 /*
     clsLEAmDNS2_Host::_joinMulticastGroups
 */
-bool clsLEAMDNSHost::_joinMulticastGroups(void)
+bool clsLEAMDNSHost::_joinMulticastGroups()
 {
     bool    bResult = false;
 
     // Join multicast group(s)
-    if (m_pNetIf)
+    for (netif* p_netif = netif_list; p_netif; p_netif = p_netif->next)
     {
-        bResult = _joinMulticastGroups(m_pNetIf);
-    }
-    else
-    {
-        for (netif* p_netif = netif_list; p_netif; p_netif = p_netif->next)
+        if (netif_is_up(p_netif) && _joinMulticastGroups(p_netif))
         {
-            if (netif_is_up(p_netif) && _joinMulticastGroups(p_netif))
-            {
-                bResult = true;
-            }
+            bResult = true;
         }
     }
     return bResult;
@@ -915,22 +906,15 @@ bool clsLEAMDNSHost::_joinMulticastGroups(netif* p_pNetIf)
 /*
     clsLEAmDNS2_Host::_leaveMulticastGroups
 */
-bool clsLEAMDNSHost::_leaveMulticastGroups(void)
+bool clsLEAMDNSHost::_leaveMulticastGroups()
 {
     bool    bResult = false;
 
-    if (m_pNetIf)
+    for (netif* p_netif = netif_list; p_netif; p_netif = p_netif->next)
     {
-        bResult = _leaveMulticastGroups(m_pNetIf);
-    }
-    else
-    {
-        for (netif* p_netif = netif_list; p_netif; p_netif = p_netif->next)
+        if (_leaveMulticastGroups(p_netif))
         {
-            if (_leaveMulticastGroups(p_netif))
-            {
-                bResult = true;
-            }
+            bResult = true;
         }
     }
     return bResult;
@@ -979,118 +963,6 @@ bool clsLEAMDNSHost::_leaveMulticastGroups(netif* p_pNetif)
 /*
     NETIF
 */
-
-/*
-    clsLEAmDNS2_Host::_getNetIfState
-
-    Returns the current netif state.
-
-*/
-clsLEAMDNSHost::typeNetIfState clsLEAMDNSHost::_getNetIfState(void) const
-{
-    typeNetIfState  curNetIfState = static_cast<typeNetIfState>(enuNetIfState::None);
-
-    if ((m_pNetIf) &&
-            (netif_is_up(m_pNetIf)))
-    {
-        curNetIfState |= static_cast<typeNetIfState>(enuNetIfState::IsUp);
-
-        // Check if netif link is up
-        if ((netif_is_link_up(m_pNetIf)) &&
-                ((m_pNetIf != netif_get_by_index(WIFI_STA)) ||
-                 (STATION_GOT_IP == wifi_station_get_connect_status())))
-        {
-            curNetIfState |= static_cast<typeNetIfState>(enuNetIfState::LinkIsUp);
-        }
-
-#ifdef MDNS_IPV4_SUPPORT
-        // Check for IPv4 address
-        if (_getResponderIPAddress(enuIPProtocolType::V4).isSet())
-        {
-            curNetIfState |= static_cast<typeNetIfState>(enuNetIfState::IPv4);
-        }
-#endif
-#ifdef MDNS_IPV6_SUPPORT
-        // Check for IPv6 address
-        if (_getResponderIPAddress(enuIPProtocolType::V6).isSet())
-        {
-            curNetIfState |= static_cast<typeNetIfState>(enuNetIfState::IPv6);
-        }
-#endif
-    }
-    return curNetIfState;
-}
-
-/*
-    clsLEAmDNS2_Host::_checkNetIfState
-
-    Checks the netif state.
-    If eg. a new address appears, the announcing is restarted.
-
-*/
-bool clsLEAMDNSHost::_checkNetIfState(void)
-{
-    typeNetIfState  curNetIfState;
-    if (m_NetIfState != ((curNetIfState = _getNetIfState())))
-    {
-        // Some state change happened
-        DEBUG_EX_INFO(DEBUG_OUTPUT.printf_P(PSTR("%s _checkNetIfState: DID CHANGE NETIF STATE\n\n"), _DH()););
-        DEBUG_EX_INFO(
-            if ((curNetIfState & static_cast<typeNetIfState>(enuNetIfState::IsUp)) != (m_NetIfState & static_cast<typeNetIfState>(enuNetIfState::IsUp))) DEBUG_OUTPUT.printf_P(PSTR("%s _checkNetIfState: Netif is up: %s\n"), _DH(), ((curNetIfState & static_cast<typeNetIfState>(enuNetIfState::IsUp)) ? "YES" : "NO"));
-            if ((curNetIfState & static_cast<typeNetIfState>(enuNetIfState::LinkIsUp)) != (m_NetIfState & static_cast<typeNetIfState>(enuNetIfState::LinkIsUp))) DEBUG_OUTPUT.printf_P(PSTR("%s _checkNetIfState: Netif link is up: %s\n"), _DH(), ((curNetIfState & static_cast<typeNetIfState>(enuNetIfState::LinkIsUp)) ? "YES" : "NO"));
-#ifdef MDNS_IPV4_SUPPORT
-                if ((curNetIfState & static_cast<typeNetIfState>(enuNetIfState::IPv4)) != (m_NetIfState & static_cast<typeNetIfState>(enuNetIfState::IPv4)))
-            {
-                DEBUG_OUTPUT.printf_P(PSTR("%s _checkNetIfState: IPv4 address is set: %s\n"), _DH(), ((curNetIfState & static_cast<typeNetIfState>(enuNetIfState::IPv4)) ? "YES" : "NO"));
-                    if (curNetIfState & static_cast<typeNetIfState>(enuNetIfState::IPv4))
-                    {
-                        DEBUG_OUTPUT.printf_P(PSTR("%s _checkNetIfState: IPv4 address: %s\n"), _DH(), _getResponderIPAddress(enuIPProtocolType::V4).toString().c_str());
-                    }
-                }
-#endif
-#ifdef MDNS_IPV6_SUPPORT
-        if ((curNetIfState & static_cast<typeNetIfState>(enuNetIfState::IPv6)) != (m_NetIfState & static_cast<typeNetIfState>(enuNetIfState::IPv6)))
-    {
-        DEBUG_OUTPUT.printf_P(PSTR("%s _checkNetIfState: IPv6 address is set: %s\n"), _DH(), ((curNetIfState & static_cast<typeNetIfState>(enuNetIfState::IPv6)) ? "YES" : "NO"));
-            if (curNetIfState & static_cast<typeNetIfState>(enuNetIfState::IPv6))
-            {
-                DEBUG_OUTPUT.printf_P(PSTR("%s _checkNetIfState: IPv6 address: %s\n"), _DH(), _getResponderIPAddress(enuIPProtocolType::V6).toString().c_str());
-            }
-        }
-#endif
-        );
-        if ((curNetIfState & static_cast<typeNetIfState>(enuNetIfState::LinkMask)) != (m_NetIfState & static_cast<typeNetIfState>(enuNetIfState::LinkMask)))
-        {
-            // Link came up or down
-            DEBUG_EX_INFO(DEBUG_OUTPUT.printf_P(PSTR("%s _checkNetIfState: Link state changed -> restarting\n"), _DH()););
-            restart();
-        }
-        else if (curNetIfState & static_cast<typeNetIfState>(enuNetIfState::LinkIsUp))
-        {
-            // Link is up (unchanged)
-            if ((curNetIfState & static_cast<typeNetIfState>(enuNetIfState::IPMask)) != (m_NetIfState & static_cast<typeNetIfState>(enuNetIfState::IPMask)))
-            {
-                // IP state changed
-                // TODO: If just a new IP address was added, a simple re-announcement should be enough
-                DEBUG_EX_INFO(DEBUG_OUTPUT.printf_P(PSTR("%s _checkNetIfState: IP state changed -> restarting\n"), _DH()););
-                restart();
-            }
-        }
-        /*  if (enuProbingStatus::Done == m_HostProbeInformation.m_ProbingStatus) {
-            // Probing is done, prepare to (re)announce host
-            DEBUG_EX_INFO(DEBUG_OUTPUT.printf_P(PSTR("%s _checkNetIfState: Preparing to (re)announce host.\n")););
-            //m_HostProbeInformation.m_ProbingStatus = enuProbingStatus::Done;
-            m_HostProbeInformation.m_u8SentCount = 0;
-            m_HostProbeInformation.m_Timeout.reset(MDNS_ANNOUNCE_DELAY);
-            }*/
-        m_NetIfState = curNetIfState;
-    }
-
-    bool    bResult = ((curNetIfState & static_cast<typeNetIfState>(enuNetIfState::LinkMask)) &&    // Continue if Link is UP
-                       (curNetIfState & static_cast<typeNetIfState>(enuNetIfState::IPMask)));       // AND has any IP
-    DEBUG_EX_INFO(if (!bResult) DEBUG_OUTPUT.printf_P(PSTR("%s _checkNetIfState: Link is DOWN(%s) or NO IP address(%s)!\n"), _DH(), (curNetIfState & static_cast<typeNetIfState>(enuNetIfState::LinkMask) ? "NO" : "YES"), (curNetIfState & static_cast<typeNetIfState>(enuNetIfState::IPMask) ? "NO" : "YES")););
-    return bResult;
-}
 
 
 /*

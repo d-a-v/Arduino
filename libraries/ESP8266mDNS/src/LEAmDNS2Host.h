@@ -264,46 +264,22 @@ protected:
 
     };
 
-    /**
-         list
-    */
-    using list = std::list<clsLEAMDNSHost*>;
 
-    // File: ..._Backbone
-    /**
-        clsBackbone
-    */
-    class clsBackbone
-    {
-    public:
-        static clsBackbone* sm_pBackbone;
-        clsBackbone(void);
-        ~clsBackbone(void);
+    //////////////////////////////////////
+    // host single instance - was backbone
+    
+    bool                m_bDelayUDPProcessing;
+    uint32_t            m_u32DelayedDatagrams;
 
-        bool init(void);
+    bool _allocUDPContext(void);
+    bool _releaseUDPContext(void);
 
-        UdpContext* addHost(clsLEAMDNSHost* p_pHost);
-        bool removeHost(clsLEAMDNSHost* p_pHost);
-        size_t hostCount(void) const;
-        bool setDelayUDPProcessing(bool p_bDelayProcessing);
+    bool _processUDPInput(void);
 
-    protected:
-        UdpContext*         m_pUDPContext;
-        bool                m_bDelayUDPProcessing;
-        uint32_t            m_u32DelayedDatagrams;
-        list                m_HostList;
+    const char* _DH(void) const { return "bone"; }
 
-        bool _allocUDPContext(void);
-        bool _releaseUDPContext(void);
-
-        bool _processUDPInput(void);
-
-        const clsLEAMDNSHost* _findHost(netif* p_pNetIf) const;
-        clsLEAMDNSHost* _findHost(netif* p_pNetIf);
-
-        const char* _DH(void) const;
-    };
-
+    // backbone end
+    //////////////////////////////////////
 
     // File: ..._Host_Structs
     /**
@@ -320,6 +296,7 @@ protected:
 #endif
     };
 
+#if 0
     /**
         typeNetIfState & enuNetIfState
     */
@@ -338,6 +315,7 @@ protected:
         IPv6        = 0x08,
         IPMask      = (IPv4 | IPv6),
     };
+#endif
 
 public:
 
@@ -1626,7 +1604,7 @@ protected:
 
     // File: ..._Host_Debug
 #if not defined ESP_8266_MDNS_INCLUDE || defined DEBUG_ESP_MDNS_RESPONDER
-    const char* _DH(const clsService* p_pMDNSService = 0) const;
+    const char* _DH(const clsService* p_pMDNSService = 0) const { return "bone"; }
     const char* _service2String(const clsService* p_pMDNSService) const;
 
     bool _printRRDomain(const clsRRDomain& p_rRRDomain) const;
@@ -1640,8 +1618,7 @@ protected:
 
 
 protected:
-    netif*                      m_pNetIf;
-    typeNetIfState              m_NetIfState;
+    //typeNetIfState              m_NetIfState;
     UdpContext*                 m_pUDPContext;
 
     char*                       m_pcHostName;

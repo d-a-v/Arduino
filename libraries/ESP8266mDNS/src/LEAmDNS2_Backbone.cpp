@@ -35,10 +35,10 @@ namespace experimental
 
 
 /*
-    clsLEAmDNS2_Host::clsBackbone::clsBackbone constructor
+    clsLEAmDNS2_Host::clsBackbone constructor
 
 */
-clsLEAMDNSHost::clsBackbone::clsBackbone(void)
+clsLEAMDNSHost::clsBackbone(void)
     :   m_pUDPContext(0),
         m_bDelayUDPProcessing(false),
         m_u32DelayedDatagrams(0)
@@ -46,72 +46,25 @@ clsLEAMDNSHost::clsBackbone::clsBackbone(void)
 }
 
 /*
-    clsLEAmDNS2_Host::clsBackbone::clsBackbone destructor
+    clsLEAmDNS2_Host::clsBackbone destructor
 
 */
-clsLEAMDNSHost::clsBackbone::~clsBackbone(void)
+clsLEAMDNSHost::~clsBackbone(void)
 {
     _releaseUDPContext();
 }
 
 /*
-    clsLEAmDNS2_Host::clsBackbone::init
+    clsLEAmDNS2_Host::init
 
 */
-bool clsLEAMDNSHost::clsBackbone::init(void)
+bool clsLEAMDNSHost::init(void)
 {
     return _allocUDPContext();
 }
 
 /*
-    clsLEAmDNS2_Host::clsBackbone::addHost
-
-*/
-UdpContext* clsLEAMDNSHost::clsBackbone::addHost(clsLEAMDNSHost* p_pHost)
-{
-    UdpContext* pUDPContext = 0;
-
-    if ((m_pUDPContext) &&
-            (p_pHost))
-    {
-        m_HostList.push_back(p_pHost);
-        pUDPContext = m_pUDPContext;
-    }
-    DEBUG_EX_INFO(DEBUG_OUTPUT.printf_P(PSTR("%s addHost: %s to add host!\n"), _DH(), (pUDPContext ? "Succeeded" : "FAILED")););
-    return pUDPContext;
-}
-
-/*
-    clsLEAmDNS2_Host::clsBackbone::removeHost
-
-*/
-bool clsLEAMDNSHost::clsBackbone::removeHost(clsLEAMDNSHost* p_pHost)
-{
-    bool    bResult = false;
-
-    if ((p_pHost) &&
-            (m_HostList.end() != std::find(m_HostList.begin(), m_HostList.end(), p_pHost)))
-    {
-        // Remove host object
-        m_HostList.remove(p_pHost);
-        bResult = true;
-    }
-    DEBUG_EX_INFO(DEBUG_OUTPUT.printf_P(PSTR("%s removeHost: %s to remove host!\n"), _DH(), (bResult ? "Succeeded" : "FAILED")););
-    return bResult;
-}
-
-
-/*
-    clsLEAmDNS2_Host::clsBackbone::hostCount
-
-*/
-size_t clsLEAMDNSHost::clsBackbone::hostCount(void) const
-{
-    return m_HostList.size();
-}
-
-/*
-    clsLEAMDNSHost::clsBackbone::::setDelayUDPProcessing
+    clsLEAMDNSHost::::setDelayUDPProcessing
 
     When executing _sendMessage, with multiple or larger messages, sometimes the ESP IP stack seems
     to need a small delay to get the job done. To allow for this delay, a 'delay' was added after one
@@ -120,7 +73,7 @@ size_t clsLEAMDNSHost::clsBackbone::hostCount(void) const
     To avoid 're-entry-like' problems, UDP processing might be blocked for a short period of time.
 
 */
-bool clsLEAMDNSHost::clsBackbone::setDelayUDPProcessing(bool p_bDelayUDPProcessing)
+bool clsLEAMDNSHost::setDelayUDPProcessing(bool p_bDelayUDPProcessing)
 {
     if (m_bDelayUDPProcessing != p_bDelayUDPProcessing)
     {
@@ -139,10 +92,10 @@ bool clsLEAMDNSHost::clsBackbone::setDelayUDPProcessing(bool p_bDelayUDPProcessi
 }
 
 /*
-    clsLEAmDNS2_Host::clsBackbone::_allocUDPContext
+    clsLEAmDNS2_Host::_allocUDPContext
 
 */
-bool clsLEAMDNSHost::clsBackbone::_allocUDPContext(void)
+bool clsLEAMDNSHost::_allocUDPContext(void)
 {
     DEBUG_EX_INFO(DEBUG_OUTPUT.printf_P(PSTR("%s _allocUDPContext\n"), _DH()););
     if (_releaseUDPContext())
@@ -163,7 +116,7 @@ bool clsLEAMDNSHost::clsBackbone::_allocUDPContext(void)
                 const uint8_t	c_u8MulticastTTL = 255;//1;//255;
 
                 m_pUDPContext->setMulticastTTL(c_u8MulticastTTL);
-                m_pUDPContext->onRx(std::bind(&clsLEAMDNSHost::clsBackbone::_processUDPInput, this));
+                m_pUDPContext->onRx(std::bind(&clsLEAMDNSHost::_processUDPInput, this));
                 /*  m_pUDPContext->onRx([&](void)->void
                     {
                 	DEBUG_EX_INFO(DEBUG_OUTPUT.printf_P(PSTR("%s _allocUDPContext::onRx Received data!\n"), _DH()););
@@ -190,7 +143,7 @@ bool clsLEAMDNSHost::clsBackbone::_allocUDPContext(void)
     clsLEAmDNS2_Host::clsBackbone::_releaseUDPContext
 
 */
-bool clsLEAMDNSHost::clsBackbone::_releaseUDPContext(void)
+bool clsLEAMDNSHost::_releaseUDPContext(void)
 {
     if (m_pUDPContext)
     {
@@ -201,12 +154,12 @@ bool clsLEAMDNSHost::clsBackbone::_releaseUDPContext(void)
 }
 
 /*
-    clsLEAmDNS2_Host::clsBackbone::_processUDPInput
+    clsLEAmDNS2_Host::_processUDPInput
 
     Called in SYS context!
 
 */
-bool clsLEAMDNSHost::clsBackbone::_processUDPInput(void)
+bool clsLEAMDNSHost::_processUDPInput(void)
 {
     DEBUG_EX_INFO(DEBUG_OUTPUT.printf_P(PSTR("%s _processUDPInput\n"), _DH()););
 
@@ -256,53 +209,8 @@ bool clsLEAMDNSHost::clsBackbone::_processUDPInput(void)
 }
 
 /*
-    clsLEAmDNS2_Host::clsBackbone::_findHost
-*/
-const clsLEAMDNSHost* clsLEAMDNSHost::clsBackbone::_findHost(netif* p_pNetIf) const
-{
-    //DEBUG_EX_INFO(DEBUG_OUTPUT.printf_P(PSTR("%s _findHost\n"), _DH()););
-    const clsLEAMDNSHost* pResult = 0;
-    for (const clsLEAMDNSHost* pHost : m_HostList)
-    {
-        if ((p_pNetIf) &&
-                (pHost->m_pNetIf == p_pNetIf))
-        {
-            pResult = pHost;
-            break;
-        }
-    }
-    return pResult;
-}
-
-/*
-    MDNSResponder::_findHost
-*/
-clsLEAMDNSHost* clsLEAMDNSHost::clsBackbone::_findHost(netif* p_pNetIf)
-{
-    return (clsLEAMDNSHost*)(((const clsLEAMDNSHost::clsBackbone*)this)->_findHost(p_pNetIf));
-}
-
-
-/*
     MISC
 */
-
-#if not defined ESP_8266_MDNS_INCLUDE || defined DEBUG_ESP_MDNS_RESPONDER
-
-/*
-    clsLEAmDNS2_Host::clsBackbone::_DH
-*/
-const char* clsLEAMDNSHost::clsBackbone::_DH(void) const
-{
-    static char acBuffer[24];
-
-    *acBuffer = 0;
-    sprintf_P(acBuffer, PSTR("[mDNS::backbone]"));
-
-    return acBuffer;
-}
-
-#endif
 
 #if LWIP_VERSION_MAJOR == 1
 
