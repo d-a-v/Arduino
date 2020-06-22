@@ -129,11 +129,49 @@ void MDNSServiceQueryCallback(const MDNSResponder::clsQuery& p_Query,
    Probe result callback for Services
 */
 
-void serviceProbeResult(MDNSResponder::clsService& p_rMDNSService,
-                        const char* p_pcInstanceName,
+void serviceProbeResult(const char* p_pcInstanceName,
                         bool p_bProbeResult) {
-  (void)p_rMDNSService;
-  Serial.printf("MDNSServiceProbeResultCallback: Service %s probe %s\n", p_pcInstanceName, (p_bProbeResult ? "succeeded." : "failed!"));
+  Serial.printf("serviceProbeResult: Service %s probe %s\n", p_pcInstanceName, (p_bProbeResult ? "succeeded." : "failed!"));
+}
+
+void serviceAddService(MDNSResponder::clsService& p_rMDNSService) {
+  Serial.printf("user callback: serviceAddService called, addServiceTxt() called\n");
+
+  // Add some '_http._tcp' protocol specific MDNS service TXT items
+  // See: http://www.dns-sd.org/txtrecords.html#http
+  p_rMDNSService.addServiceTxt("user", "");
+  p_rMDNSService.addServiceTxt("password", "");
+  p_rMDNSService.addServiceTxt("path", "/");
+}
+
+/*
+   MDNSHostAddServicesCallback
+
+   Callback in which "unattended?" services can be added
+   This callback can be called several times.
+
+   Obtained service pointer inside this callback from previous calls
+   will have been onvalidated prior to subsequent calls.
+*/
+
+void hostAddServices(clsLEAMDNSHost& p_rMDNSHost) {
+
+  // Add a 'http.tcp' service to port 'SERVICE_PORT', using the host domain as instance domain
+  hMDNSService = MDNS.addService(0, "http", "tcp", SERVICE_PORT, serviceProbeResult, serviceAddService);
+
+  if (hMDNSService)  {
+    Serial.printf("user callback: service http.tcp successfully added, subsequent callback will add serviceTxt\n");
+  } else {
+    Serial.printf("user callback: service http.tcp: adding FAILED!\n");
+  }
+
+  // Install dynamic 'http.tcp' service query
+  hMDNSServiceQuery = MDNS.installServiceQuery("http", "tcp", MDNSServiceQueryCallback);
+  if (hMDNSServiceQuery) {
+    Serial.printf("MDNSProbeResultCallback: Service query for 'http.tcp' services installed.\n");
+  } else {
+    Serial.printf("MDNSProbeResultCallback: FAILED to install service query for 'http.tcp' services!\n");
+  }
 }
 
 /*
@@ -147,10 +185,9 @@ void serviceProbeResult(MDNSResponder::clsService& p_rMDNSService,
 
 */
 
-void hostProbeResult(clsLEAMDNSHost & p_rMDNSHost, String p_pcDomainName, bool p_bProbeResult) {
+void hostProbeResult(const char* p_pcDomainName, bool p_bProbeResult) {
 
-  (void)p_rMDNSHost;
-  Serial.printf("MDNSHostProbeResultCallback: Host domain '%s.local' is %s\n", p_pcDomainName.c_str(), (p_bProbeResult ? "free" : "already USED!"));
+  Serial.printf("MDNSHostProbeResultCallback: Host domain '%s.local' is %s\n", p_pcDomainName, (p_bProbeResult ? "free" : "already USED!"));
 
   if (true == p_bProbeResult) {
     // Set station hostname
@@ -160,35 +197,12 @@ void hostProbeResult(clsLEAMDNSHost & p_rMDNSHost, String p_pcDomainName, bool p
       // Hostname free -> setup clock service
       bHostDomainConfirmed = true;
 
-      if (!hMDNSService) {
-        // Add a 'http.tcp' service to port 'SERVICE_PORT', using the host domain as instance domain
-        hMDNSService = MDNS.addService(0, "http", "tcp", SERVICE_PORT, serviceProbeResult);
-
-        if (hMDNSService)  {
-          hMDNSService->setProbeResultCallback(serviceProbeResult);
-          //         MDNS.setServiceProbeResultCallback(hMDNSService, serviceProbeResult);
-
-          // Add some '_http._tcp' protocol specific MDNS service TXT items
-          // See: http://www.dns-sd.org/txtrecords.html#http
-          hMDNSService->addServiceTxt("user", "");
-          hMDNSService->addServiceTxt("password", "");
-          hMDNSService->addServiceTxt("path", "/");
-        }
-
-        // Install dynamic 'http.tcp' service query
-        if (!hMDNSServiceQuery) {
-          hMDNSServiceQuery = MDNS.installServiceQuery("http", "tcp", MDNSServiceQueryCallback);
-          if (hMDNSServiceQuery) {
-            Serial.printf("MDNSProbeResultCallback: Service query for 'http.tcp' services installed.\n");
-          } else {
-            Serial.printf("MDNSProbeResultCallback: FAILED to install service query for 'http.tcp' services!\n");
-          }
-        }
-      }
     }
   } else {
     // Change hostname, use '-' as divider between base name and index
-    MDNS.setHostName(MDNSResponder::indexDomainName(p_pcDomainName.c_str(), "-", 0));
+    const char* tryName = MDNSResponder::indexDomainName(p_pcDomainName, "-", 0);
+    Serial.printf("mDNSHost::ProbeResultCallback: try with hostname '%s'\n", tryName);
+    MDNS.setHostName(tryName);
   }
 }
 
@@ -264,20 +278,14 @@ void setup(void) {
   // Setup HTTP server
   server.on("/", handleHTTPRequest);
 
-  // Setup MDNS responders
-  MDNS.setProbeResultCallback(hostProbeResult);
-
-  // Init the (currently empty) host domain string with 'esp8266'
-  MDNS.begin("esp8266_v2");
-  /*
-    if ((!MDNSResponder::indexDomain(pcHostDomain, 0, "esp8266")) ||
-        (!MDNS.begin(pcHostDomain))) {
-      Serial.println(" Error setting up MDNS responder!");
-      while (1) { // STOP
-        delay(1000);
-      }
+  if (MDNS.begin("mDNSv2-monitor", hostProbeResult, hostAddServices)) {
+    Serial.println("mDNSv-monitor started");
+  } else {
+    Serial.println("FAILED to start mDNSv2-monitor");
+    while (true) {
+      delay(1000);
     }
-  */
+  }
   Serial.println("MDNS responder started");
 
   // Start HTTP server

@@ -65,7 +65,7 @@
 #define DST_OFFSET          1                                   // CEST
 #define UPDATE_CYCLE        (1 * 1000)                          // every second
 
-#define START_AP_AFTER_MS   10000                               // start AP after delay
+#define START_AP_AFTER_MS   20000                               // start AP after delay
 #define SERVICE_PORT        80                                  // HTTP port
 
 #ifndef STASSID
@@ -167,12 +167,15 @@ void MDNSDynamicServiceTxtCallback(const clsLEAMDNSHost::hMDNSService& p_hServic
 */
 
 void hostAddServices(clsLEAMDNSHost& p_rMDNSHost) {
-  // Unattended added service
-  Serial.printf("user callback: hostAddServices (mDNSHost::AddServicesCallback): add service espclk\n");
   // hMDNSService may be overwritten, deallocation is not user's responsibility
   hMDNSService = p_rMDNSHost.addService(0, "espclk", "tcp", 80);
-  hMDNSService->addDynamicServiceTxt("curtime", getTimeString());
-  hMDNSService->setDynamicServiceTxtCallback(MDNSDynamicServiceTxtCallback);
+  if (hMDNSService) {
+    Serial.printf("user callback: hostAddServices (mDNSHost::AddServicesCallback): add service espclk\n");
+    hMDNSService->addDynamicServiceTxt("curtime", getTimeString());
+    hMDNSService->setDynamicServiceTxtCallback(MDNSDynamicServiceTxtCallback);
+  } else {
+    Serial.printf("user callback: FAILED to add service espclk !\n");
+  }
 }
 
 /*
@@ -186,13 +189,12 @@ void hostAddServices(clsLEAMDNSHost& p_rMDNSHost) {
 
 */
 
-void hostProbeResult(clsLEAMDNSHost & p_rMDNSHost, const char* p_pcDomainName, bool p_bProbeResult) {
-  (void)p_rMDNSHost;
+void hostProbeResult(const char* p_pcDomainName, bool p_bProbeResult) {
   Serial.printf("user callback: hostProbeResult (mDNSHost::ProbeResultCallback): '%s' is %s\n", p_pcDomainName, (p_bProbeResult ? "FREE" : "USED!"));
   if (!p_bProbeResult) {
     // Change hostname, use '-' as divider between base name and index
     const char* tryName = MDNSResponder::indexDomainName(p_pcDomainName, "-", 0);
-    Serial.printf("mDNSHost::ProbeResultCallback: try wirth hostname '%s'\n", tryName);
+    Serial.printf("mDNSHost::ProbeResultCallback: try with hostname '%s'\n", tryName);
     MDNS.setHostName(tryName);
   }
 }
@@ -263,10 +265,13 @@ void setup(void) {
 
   // Setup MDNS responder
   // Init the (currently empty) host domain string with 'esp8266'
-  if (MDNS.begin("leamdnsv2", hostProbeResult, hostAddServices)) {
-    Serial.println("mDNS-AP started");
+  if (MDNS.begin("mDNSv2-clock", hostProbeResult, hostAddServices)) {
+    Serial.println("mDNSv2-clock started");
   } else {
-    Serial.println("FAILED to start mDNS-AP");
+    Serial.println("FAILED to start mDNSv2-clock");
+    while (true) {
+      delay(1000);
+    }
   }
 
   // Setup HTTP server

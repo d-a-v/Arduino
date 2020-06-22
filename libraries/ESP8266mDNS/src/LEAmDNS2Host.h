@@ -398,8 +398,7 @@ public:
         fnProbeResultCallback
         Callback function for host domain probe results
     */
-    using fnProbeResultCallback = std::function<void(clsLEAMDNSHost& p_rHost,
-                                  const char* p_pcDomainName,
+    using fnProbeResultCallback = std::function<void(const char* p_pcDomainName,
                                   bool p_bProbeResult)>;
     /**
         fnAddServicesCallback
@@ -407,7 +406,12 @@ public:
     */
     using fnAddServicesCallback = std::function<void(clsLEAMDNSHost& p_rHost)>;
 
-    static fnProbeResultCallback stProbeResultCallback;
+    // this is for Leagcy only:
+    //static fnProbeResultCallback stProbeResultCallback;
+    using fnProbeResultLegacyCallback = std::function<void(clsLEAMDNSHost& p_rHost,
+                                        const char* p_pcDomainName,
+                                        bool p_bProbeResult)>;
+    static fnProbeResultLegacyCallback stProbeResultLegacyCallback;
 
 protected:
     /**
@@ -439,8 +443,7 @@ public:
         /**
             fnProbeResultCallback
         */
-        using fnProbeResultCallback = std::function<void(clsService& p_rMDNSService,
-                                      const char* p_pcInstanceName,
+        using fnProbeResultCallback = std::function<void(const char* p_pcInstanceName,
                                       bool p_bProbeResult)>;
         using fnAddServicesCallback = std::function<void(clsService& p_rMDNSService)>;
 

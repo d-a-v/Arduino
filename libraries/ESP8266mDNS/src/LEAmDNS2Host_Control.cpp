@@ -1619,7 +1619,7 @@ bool clsLEAMDNSHost::_callHostProbeResultCallback(bool p_bResult)
 {
     if (m_ProbeInformation.m_fnProbeResultCallback)
     {
-        m_ProbeInformation.m_fnProbeResultCallback(*this, m_pcHostName, p_bResult);
+        m_ProbeInformation.m_fnProbeResultCallback(m_pcHostName, p_bResult);
         if (p_bResult)
         {
             // allow adding services when host probe has succeeded
@@ -1644,7 +1644,7 @@ bool clsLEAMDNSHost::_callServiceProbeResultCallback(clsLEAMDNSHost::clsService&
 {
     if (p_rService.m_ProbeInformation.m_fnProbeResultCallback)
     {
-        p_rService.m_ProbeInformation.m_fnProbeResultCallback(p_rService, p_rService.instanceName(), p_bResult);
+        p_rService.m_ProbeInformation.m_fnProbeResultCallback(p_rService.instanceName(), p_bResult);
         if (p_bResult)
         {
             p_rService.m_ProbeInformation.m_fnAddServicesCallback(p_rService);

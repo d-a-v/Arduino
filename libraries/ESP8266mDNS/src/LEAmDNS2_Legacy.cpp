@@ -1069,7 +1069,7 @@ bool clsLEAMDNSHost_Legacy::setHostProbeResultCallback(clsLEAMDNSHost_Legacy::MD
 {
     bool	bResult = true;
 
-    clsLEAMDNSHost::stProbeResultCallback =
+    clsLEAMDNSHost::stProbeResultLegacyCallback =
         [p_fnCallback](clsLEAMDNSHost& /*p_rHost*/,
                        const char* p_pcDomainName,
                        bool p_bProbeResult)->void
@@ -1083,7 +1083,19 @@ bool clsLEAMDNSHost_Legacy::setHostProbeResultCallback(clsLEAMDNSHost_Legacy::MD
 
     for (stcHostInformation::list::iterator it = m_HostInformations.begin(); ((bResult) && (it != m_HostInformations.end())); ++it)
     {
-        bResult = (*it).m_pHost->setProbeResultCallback(clsLEAMDNSHost::stProbeResultCallback, [](clsLEAMDNSHost&) {});
+        // emulate the old callback API
+        bResult = (*it).m_pHost->setProbeResultCallback(
+                      [](const char* p_pcDomainName, bool p_bProbeResult)
+        {
+            if (!p_bProbeResult)
+            {
+                clsLEAMDNSHost::stProbeResultLegacyCallback(*(clsLEAMDNSHost*)nullptr, p_pcDomainName, p_bProbeResult);
+            }
+        },
+        [](clsLEAMDNSHost & host)
+        {
+            clsLEAMDNSHost::stProbeResultLegacyCallback(host, nullptr, true);
+        });
     }
     return bResult;
 }
@@ -1096,7 +1108,7 @@ bool clsLEAMDNSHost_Legacy::setHostProbeResultCallback(clsLEAMDNSHost_Legacy::MD
 {
     bool	bResult = true;
 
-    clsLEAMDNSHost::stProbeResultCallback =
+    clsLEAMDNSHost::stProbeResultLegacyCallback =
         [this, p_fnCallback](clsLEAMDNSHost& /*p_rHost*/,
                              const char* p_pcDomainName,
                              bool p_bProbeResult)->void
@@ -1109,7 +1121,19 @@ bool clsLEAMDNSHost_Legacy::setHostProbeResultCallback(clsLEAMDNSHost_Legacy::MD
 
     for (stcHostInformation::list::iterator it = m_HostInformations.begin(); ((bResult) && (it != m_HostInformations.end())); ++it)
     {
-        bResult = (*it).m_pHost->setProbeResultCallback(clsLEAMDNSHost::stProbeResultCallback, [](clsLEAMDNSHost&) {});
+        // emulate the old callback API
+        bResult = (*it).m_pHost->setProbeResultCallback(
+                      [](const char* p_pcDomainName, bool p_bProbeResult)
+        {
+            if (!p_bProbeResult)
+            {
+                clsLEAMDNSHost::stProbeResultLegacyCallback(*(clsLEAMDNSHost*)nullptr, p_pcDomainName, p_bProbeResult);
+            }
+        },
+        [](clsLEAMDNSHost & host)
+        {
+            clsLEAMDNSHost::stProbeResultLegacyCallback(host, nullptr, true);
+        });
     }
     return bResult;
 }
@@ -1129,8 +1153,7 @@ bool clsLEAMDNSHost_Legacy::setServiceProbeResultCallback(const clsLEAMDNSHost_L
         bResult = (((pService = (clsLEAMDNSHost::clsService*)(*it).m_HandleToPtr[p_hService]))
                    && (pService->setProbeResultCallback(
 
-                           [this, p_hService, p_fnCallback](clsLEAMDNSHost::clsService& /*p_rMDNSService*/,
-                                   const char* p_pcInstanceName,
+                           [this, p_hService, p_fnCallback](const char* p_pcInstanceName,
                                    bool p_bProbeResult)->void
         {
             if (p_fnCallback)	// void(const char* p_pcServiceName, const hMDNSService p_hMDNSService, bool p_bProbeResult)
@@ -1156,8 +1179,7 @@ bool clsLEAMDNSHost_Legacy::setServiceProbeResultCallback(const clsLEAMDNSHost_L
     {
         clsLEAMDNSHost::clsService*	pService = 0;
         bResult = (((pService = (clsLEAMDNSHost::clsService*)(*it).m_HandleToPtr[p_hService]))
-                   && (pService->setProbeResultCallback([this, p_hService, p_fnCallback](clsLEAMDNSHost::clsService& /*p_rMDNSService*/,
-                           const char* p_pcInstanceName,
+                   && (pService->setProbeResultCallback([this, p_hService, p_fnCallback](const char* p_pcInstanceName,
                            bool p_bProbeResult)->void
         {
             if (p_fnCallback)	// void((clsLEAMDNSHost_Legacy* p_pMDNSResponder, const char* p_pcServiceName, const hMDNSService p_hMDNSService, bool p_bProbeResult)
