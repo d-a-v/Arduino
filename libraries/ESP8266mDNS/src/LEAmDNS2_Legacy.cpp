@@ -1083,7 +1083,7 @@ bool clsLEAMDNSHost_Legacy::setHostProbeResultCallback(clsLEAMDNSHost_Legacy::MD
 
     for (stcHostInformation::list::iterator it = m_HostInformations.begin(); ((bResult) && (it != m_HostInformations.end())); ++it)
     {
-        bResult = (*it).m_pHost->setProbeResultCallback(clsLEAMDNSHost::stProbeResultCallback);
+        bResult = (*it).m_pHost->setProbeResultCallback(clsLEAMDNSHost::stProbeResultCallback, [](clsLEAMDNSHost&) {});
     }
     return bResult;
 }
@@ -1109,7 +1109,7 @@ bool clsLEAMDNSHost_Legacy::setHostProbeResultCallback(clsLEAMDNSHost_Legacy::MD
 
     for (stcHostInformation::list::iterator it = m_HostInformations.begin(); ((bResult) && (it != m_HostInformations.end())); ++it)
     {
-        bResult = (*it).m_pHost->setProbeResultCallback(clsLEAMDNSHost::stProbeResultCallback);
+        bResult = (*it).m_pHost->setProbeResultCallback(clsLEAMDNSHost::stProbeResultCallback, [](clsLEAMDNSHost&) {});
     }
     return bResult;
 }
@@ -1138,7 +1138,7 @@ bool clsLEAMDNSHost_Legacy::setServiceProbeResultCallback(const clsLEAMDNSHost_L
                 p_fnCallback(p_pcInstanceName, p_hService, p_bProbeResult);
             }
         }
-                       )));
+        , [](clsLEAMDNSHost::clsService&) {})));
     }
     return bResult;
 }
@@ -1164,7 +1164,7 @@ bool clsLEAMDNSHost_Legacy::setServiceProbeResultCallback(const clsLEAMDNSHost_L
             {
                 p_fnCallback(this, p_pcInstanceName, p_hService, p_bProbeResult);
             }
-        })));
+        }, [](clsLEAMDNSHost::clsService&) {})));
     }
     return bResult;
 }

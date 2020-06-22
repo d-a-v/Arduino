@@ -735,7 +735,8 @@ bool clsLEAMDNSHost::clsProbeInformation_Base::clear(void)
     clsLEAMDNSHost::clsProbeInformation::clsProbeInformation constructor
 */
 clsLEAMDNSHost::clsProbeInformation::clsProbeInformation(void)
-    :   m_fnProbeResultCallback(0)
+    :   m_fnProbeResultCallback(0),
+        m_fnAddServicesCallback(0)
 {
 }
 
@@ -747,6 +748,7 @@ bool clsLEAMDNSHost::clsProbeInformation::clear(bool p_bClearUserdata /*= false*
     if (p_bClearUserdata)
     {
         m_fnProbeResultCallback = 0;
+        m_fnAddServicesCallback = 0;
     }
     return clsProbeInformation_Base::clear();
 }
@@ -763,7 +765,8 @@ bool clsLEAMDNSHost::clsProbeInformation::clear(bool p_bClearUserdata /*= false*
     clsLEAMDNSHost::clsService::clsProbeInformation::clsProbeInformation constructor
 */
 clsLEAMDNSHost::clsService::clsProbeInformation::clsProbeInformation(void)
-    :   m_fnProbeResultCallback(0)
+    :   m_fnProbeResultCallback(0),
+        m_fnAddServicesCallback(0)
 {
 }
 
@@ -775,6 +778,7 @@ bool clsLEAMDNSHost::clsService::clsProbeInformation::clear(bool p_bClearUserdat
     if (p_bClearUserdata)
     {
         m_fnProbeResultCallback = 0;
+        m_fnAddServicesCallback = 0;
     }
     return clsProbeInformation_Base::clear();
 }
@@ -1003,9 +1007,12 @@ uint16_t clsLEAMDNSHost::clsService::port(void) const
     clsLEAMDNSHost::clsService::setProbeResultCallback
 
 */
-bool clsLEAMDNSHost::clsService::setProbeResultCallback(fnProbeResultCallback p_fnProbeResultCallback)
+bool clsLEAMDNSHost::clsService::setProbeResultCallback(fnProbeResultCallback p_fnProbeResultCallback,
+        fnAddServicesCallback p_fnAddServicesCallback)
 {
     m_ProbeInformation.m_fnProbeResultCallback = p_fnProbeResultCallback;
+    m_ProbeInformation.m_fnAddServicesCallback = p_fnAddServicesCallback;
+
     return true;
 }
 

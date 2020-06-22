@@ -156,6 +156,46 @@ void MDNSDynamicServiceTxtCallback(const clsLEAMDNSHost::hMDNSService& p_hServic
   }
 }
 
+/*
+   MDNSHostAddServicesCallback
+
+   Callback in which "unattended?" services can be added
+   This callback can be called several times.
+
+   Obtained service pointer inside this callback from previous calls
+   will have been onvalidated prior to subsequent calls.
+*/
+
+void hostAddServices(clsLEAMDNSHost& p_rMDNSHost) {
+  // Unattended added service
+  Serial.printf("user callback: hostAddServices (mDNSHost::AddServicesCallback): add service espclk\n");
+  // hMDNSService may be overwritten, deallocation is not user's responsibility
+  hMDNSService = p_rMDNSHost.addService(0, "espclk", "tcp", 80);
+  hMDNSService->addDynamicServiceTxt("curtime", getTimeString());
+  hMDNSService->setDynamicServiceTxtCallback(MDNSDynamicServiceTxtCallback);
+}
+
+/*
+   MDNSHostProbeResultCallback
+
+   Probe result callback for the host domain.
+   If the domain is free, the host domain is set and the http service is
+   added.
+   If the domain is already used, a new name is created and the probing is
+   restarted via p_pMDNSResponder->setHostname().
+
+*/
+
+void hostProbeResult(clsLEAMDNSHost & p_rMDNSHost, const char* p_pcDomainName, bool p_bProbeResult) {
+  (void)p_rMDNSHost;
+  Serial.printf("user callback: hostProbeResult (mDNSHost::ProbeResultCallback): '%s' is %s\n", p_pcDomainName, (p_bProbeResult ? "FREE" : "USED!"));
+  if (!p_bProbeResult) {
+    // Change hostname, use '-' as divider between base name and index
+    const char* tryName = MDNSResponder::indexDomainName(p_pcDomainName, "-", 0);
+    Serial.printf("mDNSHost::ProbeResultCallback: try wirth hostname '%s'\n", tryName);
+    MDNS.setHostName(tryName);
+  }
+}
 
 /*
    handleHTTPClient
@@ -223,19 +263,7 @@ void setup(void) {
 
   // Setup MDNS responder
   // Init the (currently empty) host domain string with 'esp8266'
-  if (MDNS.begin("leamdnsv2",
-  [](clsLEAMDNSHost & p_rMDNSHost, const char* p_pcDomainName, bool p_bProbeResult)->void {
-  if (p_bProbeResult) {
-      Serial.printf("mDNSHost_AP::ProbeResultCallback: '%s' is %s\n", p_pcDomainName, (p_bProbeResult ? "FREE" : "USED!"));
-      // Unattended added service
-      hMDNSService = p_rMDNSHost.addService(0, "espclk", "tcp", 80);
-      hMDNSService->addDynamicServiceTxt("curtime", getTimeString());
-      hMDNSService->setDynamicServiceTxtCallback(MDNSDynamicServiceTxtCallback);
-    } else {
-      // Change hostname, use '-' as divider between base name and index
-      MDNS.setHostName(MDNSResponder::indexDomainName(p_pcDomainName, "-", 0));
-    }
-  })) {
+  if (MDNS.begin("leamdnsv2", hostProbeResult, hostAddServices)) {
     Serial.println("mDNS-AP started");
   } else {
     Serial.println("FAILED to start mDNS-AP");

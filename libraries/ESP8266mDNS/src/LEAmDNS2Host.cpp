@@ -111,9 +111,7 @@ namespace experimental
     if no default is given, 'ESP8266' is used.
 
 */
-//static
-
-clsLEAMDNSHost::fnProbeResultCallback clsLEAMDNSHost::stProbeResultCallback = nullptr;
+clsLEAMDNSHost::fnProbeResultCallback clsLEAMDNSHost::stProbeResultCallback = nullptr; // static
 
 const char* clsLEAMDNSHost::indexDomainName(const char* p_pcDomainName,
         const char* p_pcDivider /*= "-"*/,
@@ -251,7 +249,8 @@ clsLEAMDNSHost::~clsLEAMDNSHost(void)
 
 */
 bool clsLEAMDNSHost::begin(const char* p_pcHostName,
-                           clsLEAMDNSHost::fnProbeResultCallback p_fnCallback /*= 0*/)
+                           clsLEAMDNSHost::fnProbeResultCallback p_fnProbeResultCallback /*= 0*/,
+                           clsLEAMDNSHost::fnAddServicesCallback p_fnAddServicesCallback /*= 0 */)
 {
     DEBUG_EX_INFO(DEBUG_OUTPUT.printf_P(PSTR("%s begin(%s)\n"), _DH(), (p_pcHostName ? : "_")););
 
@@ -259,7 +258,8 @@ bool clsLEAMDNSHost::begin(const char* p_pcHostName,
 
     bResult = (setHostName(p_pcHostName)) &&
               (_joinMulticastGroups()) &&
-              (p_fnCallback ? setProbeResultCallback(p_fnCallback) : true) &&
+              ((!p_fnProbeResultCallback && !p_fnAddServicesCallback)
+               || (p_fnProbeResultCallback && p_fnAddServicesCallback && setProbeResultCallback(p_fnProbeResultCallback, p_fnAddServicesCallback))) &&
               ((m_pUDPContext = _allocBackbone())) &&
               (restart());
 
@@ -365,9 +365,12 @@ const char* clsLEAMDNSHost::hostName(void) const
     clsLEAmDNS2_Host::setProbeResultCallback
 
 */
-bool clsLEAMDNSHost::setProbeResultCallback(clsLEAMDNSHost::fnProbeResultCallback p_fnCallback)
+bool clsLEAMDNSHost::setProbeResultCallback(clsLEAMDNSHost::fnProbeResultCallback p_fnProbeResultCallback,
+        clsLEAMDNSHost::fnAddServicesCallback p_fnAddServicesCallback)
 {
-    m_ProbeInformation.m_fnProbeResultCallback = p_fnCallback;
+    m_ProbeInformation.m_fnProbeResultCallback = p_fnProbeResultCallback;
+    m_ProbeInformation.m_fnAddServicesCallback = p_fnAddServicesCallback;
+
     return true;
 }
 
@@ -428,7 +431,8 @@ clsLEAMDNSHost::clsService* clsLEAMDNSHost::addService(const char* p_pcInstanceN
         const char* p_pcType,
         const char* p_pcProtocol,
         uint16_t p_u16Port,
-        clsLEAMDNSHost::clsService::fnProbeResultCallback p_fnCallback /*= 0*/)
+        clsLEAMDNSHost::clsService::fnProbeResultCallback p_fnProbeResultCallback /*= 0*/,
+        clsLEAMDNSHost::clsService::fnAddServicesCallback p_fnAddServicesCallback /*= 0*/)
 {
     clsService* pService = 0;
 
@@ -441,7 +445,8 @@ clsLEAMDNSHost::clsService* clsLEAMDNSHost::addService(const char* p_pcInstanceN
                     (pService->setType(p_pcType)) &&
                     (pService->setProtocol(p_pcProtocol)) &&
                     (pService->setPort(p_u16Port)) &&
-                    (p_fnCallback ? pService->setProbeResultCallback(p_fnCallback) : true))
+                    ((!p_fnProbeResultCallback && !p_fnAddServicesCallback) ||
+                     (p_fnProbeResultCallback && p_fnAddServicesCallback && pService->setProbeResultCallback(p_fnProbeResultCallback, p_fnAddServicesCallback))))
             {
                 m_Services.push_back(pService);
             }

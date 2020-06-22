@@ -401,6 +401,11 @@ public:
     using fnProbeResultCallback = std::function<void(clsLEAMDNSHost& p_rHost,
                                   const char* p_pcDomainName,
                                   bool p_bProbeResult)>;
+    /**
+        fnAddServicesCallback
+        Callback function to add services
+    */
+    using fnAddServicesCallback = std::function<void(clsLEAMDNSHost& p_rHost)>;
 
     static fnProbeResultCallback stProbeResultCallback;
 
@@ -412,6 +417,7 @@ protected:
     {
     public:
         fnProbeResultCallback   m_fnProbeResultCallback;
+        fnAddServicesCallback   m_fnAddServicesCallback;
 
         clsProbeInformation(void);
 
@@ -436,6 +442,7 @@ public:
         using fnProbeResultCallback = std::function<void(clsService& p_rMDNSService,
                                       const char* p_pcInstanceName,
                                       bool p_bProbeResult)>;
+        using fnAddServicesCallback = std::function<void(clsService& p_rMDNSService)>;
 
     protected:
         friend clsLEAMDNSHost;
@@ -446,6 +453,7 @@ public:
         {
         public:
             fnProbeResultCallback   m_fnProbeResultCallback;
+            fnAddServicesCallback   m_fnAddServicesCallback;
 
             clsProbeInformation(void);
 
@@ -507,7 +515,8 @@ public:
         bool setPort(uint16_t p_i16Port);
         uint16_t port(void) const;
 
-        bool setProbeResultCallback(fnProbeResultCallback p_fnProbeResultCallback);
+        bool setProbeResultCallback(fnProbeResultCallback p_fnProbeResultCallback,
+                                    fnAddServicesCallback p_fnAddServicesCallback);
         bool probeStatus(void) const;
 
         // TXT
@@ -1189,8 +1198,14 @@ public:
     // Later call 'update()' in every 'loop' to run the process loop
     // (probing, announcing, responding, ...)
     // If no callback is given, the (maybe) already installed callback stays set
+    bool begin(const char* p_pcHostName)
+    {
+        return begin(p_pcHostName, nullptr, nullptr);
+    }
+
     bool begin(const char* p_pcHostName,
-               fnProbeResultCallback p_fnCallback = 0);
+               fnProbeResultCallback p_fnCallback,
+               fnAddServicesCallback p_fnAddServicesCallback);
 
     bool close(void);
 
@@ -1199,7 +1214,8 @@ public:
     bool indexHostName(void);
     const char* hostName(void) const;
 
-    bool setProbeResultCallback(fnProbeResultCallback p_fnCallback);
+    bool setProbeResultCallback(fnProbeResultCallback p_fnProbeResultCallback,
+                                fnAddServicesCallback p_fnAddServicesCallback);
 
     // Returns 'true' is host domain probing is done
     bool probeStatus(void) const;
@@ -1211,8 +1227,18 @@ public:
     clsService* addService(const char* p_pcInstanceName,
                            const char* p_pcServiceType,
                            const char* p_pcProtocol,
+                           uint16_t p_u16Port)
+    {
+        return addService(p_pcInstanceName, p_pcServiceType, p_pcProtocol, p_u16Port, nullptr, nullptr);
+    }
+
+    clsService* addService(const char* p_pcInstanceName,
+                           const char* p_pcServiceType,
+                           const char* p_pcProtocol,
                            uint16_t p_u16Port,
-                           clsService::fnProbeResultCallback p_fnCallback = 0);
+                           clsService::fnProbeResultCallback p_fnProbeResultCallback,
+                           clsService::fnAddServicesCallback p_fnAddServicesCallback);
+
     bool removeService(clsService* p_pMDNSService);
 
     const clsService* findService(const char* p_pcInstanceName,
