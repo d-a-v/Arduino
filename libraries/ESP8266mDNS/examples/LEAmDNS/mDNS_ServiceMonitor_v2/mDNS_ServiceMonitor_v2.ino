@@ -62,7 +62,10 @@
    Global defines and vars
 */
 
+#define START_AP_AFTER_MS                      20000                               // start AP after delay
 #define SERVICE_PORT                           80                                  // HTTP port
+
+clsLEAMDNSHost                                 MDNS;                               // MDNS responder
 
 char*                                          pcHostDomain            = 0;        // Negociated host domain
 bool                                           bHostDomainConfirmed    = false;    // Flags the confirmation of the host domain
@@ -131,11 +134,11 @@ void MDNSServiceQueryCallback(const MDNSResponder::clsQuery& p_Query,
 
 void serviceProbeResult(const char* p_pcInstanceName,
                         bool p_bProbeResult) {
-  Serial.printf("serviceProbeResult: Service %s probe %s\n", p_pcInstanceName, (p_bProbeResult ? "succeeded." : "failed!"));
+  Serial.printf("user callback service probe: serviceProbeResult: Service %s probe %s\n", p_pcInstanceName, (p_bProbeResult ? "succeeded." : "failed!"));
 }
 
 void serviceAddService(MDNSResponder::clsService& p_rMDNSService) {
-  Serial.printf("user callback: serviceAddService called, addServiceTxt() called\n");
+  Serial.printf("user callback service addServiceTxt() called\n");
 
   // Add some '_http._tcp' protocol specific MDNS service TXT items
   // See: http://www.dns-sd.org/txtrecords.html#http
@@ -155,6 +158,9 @@ void serviceAddService(MDNSResponder::clsService& p_rMDNSService) {
 */
 
 void hostAddServices(clsLEAMDNSHost& p_rMDNSHost) {
+  (void)p_rMDNSHost;
+
+  Serial.printf("user callback host service called\n");
 
   // Add a 'http.tcp' service to port 'SERVICE_PORT', using the host domain as instance domain
   hMDNSService = MDNS.addService(0, "http", "tcp", SERVICE_PORT, serviceProbeResult, serviceAddService);
@@ -187,7 +193,7 @@ void hostAddServices(clsLEAMDNSHost& p_rMDNSHost) {
 
 void hostProbeResult(const char* p_pcDomainName, bool p_bProbeResult) {
 
-  Serial.printf("MDNSHostProbeResultCallback: Host domain '%s.local' is %s\n", p_pcDomainName, (p_bProbeResult ? "free" : "already USED!"));
+  Serial.printf("user callback host probe called: Host domain '%s.local' is %s\n", p_pcDomainName, (p_bProbeResult ? "free" : "already USED!"));
 
   if (true == p_bProbeResult) {
     // Set station hostname
@@ -304,7 +310,7 @@ void loop(void) {
     AP_started = true;
     Serial.printf("Starting AP...\n");
     WiFi.mode(WIFI_AP_STA);
-    WiFi.softAP(APSSID, APPSK);
+    WiFi.softAP(APSSID);
     Serial.printf("AP started...(%s:%s, %s)\n",
                   WiFi.softAPSSID().c_str(),
                   WiFi.softAPPSK().c_str(),

@@ -81,7 +81,7 @@
 const char*                   ssid                    = STASSID;
 const char*                   password                = STAPSK;
 
-//clsLEAMDNSHost                MDNS;                               // MDNS responder
+clsLEAMDNSHost                MDNS;                               // MDNS responder
 bool                          bHostDomainConfirmed    = false;    // Flags the confirmation of the host domain
 clsLEAMDNSHost::clsService*   hMDNSService            = 0;        // The handle of the clock service in the MDNS responder
 
