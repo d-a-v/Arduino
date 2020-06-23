@@ -81,7 +81,7 @@
 const char*                   ssid                    = STASSID;
 const char*                   password                = STAPSK;
 
-clsLEAMDNSHost                MDNS;                               // MDNS responder
+//clsLEAMDNSHost                MDNS;                               // MDNS responder
 bool                          bHostDomainConfirmed    = false;    // Flags the confirmation of the host domain
 clsLEAMDNSHost::clsService*   hMDNSService            = 0;        // The handle of the clock service in the MDNS responder
 
@@ -264,7 +264,7 @@ void setup(void) {
   setClock();
 
   // Setup MDNS responder
-  // Init the (currently empty) host domain string with 'esp8266'
+  // Init the (currently empty) host domain string with 'mDNSv2-clock'
   if (MDNS.begin("mDNSv2-clock", hostProbeResult, hostAddServices)) {
     Serial.println("mDNSv2-clock started");
   } else {

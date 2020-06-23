@@ -298,4 +298,16 @@ void loop(void) {
   server.handleClient();
   // Allow MDNS processing
   MDNS.update();
+
+  static bool AP_started = false;
+  if (!AP_started && millis() > START_AP_AFTER_MS) {
+    AP_started = true;
+    Serial.printf("Starting AP...\n");
+    WiFi.mode(WIFI_AP_STA);
+    WiFi.softAP(APSSID, APPSK);
+    Serial.printf("AP started...(%s:%s, %s)\n",
+                  WiFi.softAPSSID().c_str(),
+                  WiFi.softAPPSK().c_str(),
+                  WiFi.softAPIP().toString().c_str());
+  }
 }
