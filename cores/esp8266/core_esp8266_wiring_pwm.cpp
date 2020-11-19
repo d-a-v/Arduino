@@ -75,9 +75,9 @@ extern void __analogWrite(uint8_t pin, int val) {
 
 #endif // WAVEFORM_LOCKED_PHASE
 
-#ifdef WAVEFORM_ACCURATE
+#ifdef WAVEFORM_LOCKED_PWM
 
-#endif // WAVEFORM_ACCURATE
+#endif // WAVEFORM_LOCKED_PWM
 
 extern void __analogWriteRange(uint32_t range) {
   if ((range >= 15) && (range <= 65535)) {
