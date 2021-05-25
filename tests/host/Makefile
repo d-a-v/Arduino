@@ -145,6 +145,7 @@ MOCK_CPP_FILES_EMU := $(MOCK_CPP_FILES_COMMON) \
 		ArduinoMainUdp.cpp \
 		ArduinoMainSpiffs.cpp \
 		ArduinoMainLittlefs.cpp \
+		ArduinoMainSDfs.cpp \
 		user_interface.cpp \
 	)
 

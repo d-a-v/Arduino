@@ -46,6 +46,7 @@ bool run_once = false;
 const char* host_interface = nullptr;
 size_t spiffs_kb = 1024;
 size_t littlefs_kb = 1024;
+size_t sdfs_kb = 1024;
 bool ignore_sigint = false;
 bool restore_tty = false;
 bool mockdebug = false;
@@ -134,13 +135,14 @@ void help (const char* argv0, int exitcode)
 		"\t-P             - path for fs-persistent files (default: %s-)\n"
 		"\t-S             - spiffs size in KBytes (default: %zd)\n"
 		"\t-L             - littlefs size in KBytes (default: %zd)\n"
-		"\t                 (spiffs, littlefs: negative value will force mismatched size)\n"
+		"\t-D             - SDfs size in KBytes (default: %zd)\n"
+		"\t                 (spiffs, littlefs, sdfs: negative value will force mismatched size)\n"
         "\tgeneral:\n"
 		"\t-c             - ignore CTRL-C (send it via Serial)\n"
 		"\t-f             - no throttle (possibly 100%%CPU)\n"
 		"\t-1             - run loop once then exit (for host testing)\n"
 		"\t-v             - verbose\n"
-		, argv0, MOCK_PORT_SHIFTER, argv0, spiffs_kb, littlefs_kb);
+		, argv0, MOCK_PORT_SHIFTER, argv0, spiffs_kb, littlefs_kb, sdfs_kb);
 	exit(exitcode);
 }
 
@@ -157,6 +159,7 @@ static struct option options[] =
 	{ "fspath",         required_argument,  NULL, 'P' },
 	{ "spiffskb",       required_argument,  NULL, 'S' },
 	{ "littlefskb",     required_argument,  NULL, 'L' },
+	{ "sdfskb",         required_argument,  NULL, 'D' },
 	{ "portshifter",    required_argument,  NULL, 's' },
 	{ "once",           no_argument,        NULL, '1' },
 };
@@ -165,6 +168,7 @@ void cleanup ()
 {
 	mock_stop_spiffs();
 	mock_stop_littlefs();
+	mock_stop_sdfs();
 	mock_stop_uart();
 }
 
@@ -241,6 +245,9 @@ int main (int argc, char* const argv [])
 		case 'L':
 			littlefs_kb = atoi(optarg);
 			break;
+		case 'D':
+			sdfs_kb = atoi(optarg);
+			break;
 		case 'P':
 			fspath = optarg;
 			break;
@@ -281,6 +288,16 @@ int main (int argc, char* const argv [])
 		name += String(littlefs_kb > 0? littlefs_kb: -littlefs_kb, DEC);
 		name += "KB";
 		mock_start_littlefs(name, littlefs_kb);
+	}
+
+	if (sdfs_kb)
+	{
+		String name;
+		make_fs_filename(name, fspath, argv[0]);
+		name += "-sdfs";
+		name += String(sdfs_kb > 0? sdfs_kb: -sdfs_kb, DEC);
+		name += "KB";
+		mock_start_sdfs(name, sdfs_kb);
 	}
 
 	// setup global global_ipv4_netfmt
