@@ -35,9 +35,10 @@ protected:
     String m_storage;
     bool m_overwrite;
 
-    uint64_t _sdCardSizeB;
-    uint8_t* _sdCard;
 };
+
+extern uint64_t _sdCardSizeB;
+extern uint8_t* _sdCard;
 
 #define SDFS_MOCK_DECLARE(size_kb, block_kb, page_b, storage) SDFSMock sdfs_mock(size_kb * 1024, storage)
 #define SDFS_MOCK_RESET() sdfs_mock.reset()

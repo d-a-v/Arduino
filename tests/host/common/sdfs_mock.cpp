@@ -32,7 +32,8 @@
 #include <cerrno>
 #include "flash_hal_mock.h"
 
-FS SDFS(nullptr);
+uint64_t _sdCardSizeB = 0;
+uint8_t* _sdCard = nullptr;
 
 SDFSMock::SDFSMock(ssize_t fs_size, const String& storage)
 {
@@ -49,6 +50,8 @@ SDFSMock::SDFSMock(ssize_t fs_size, const String& storage)
 void SDFSMock::reset()
 {
     SDFS = FS(FSImplPtr(new sdfs::SDFSImpl()));
+    _sdCard = m_fs.data();
+    _sdCardSizeB = m_fs.size();
     load();
 }
 
