@@ -33,20 +33,24 @@
 #include <poll.h>
 #include <map>
 
-std::map<int, UdpContext*> udps;
+std::map<int, UdpContext*>* udps = nullptr;
 
 void register_udp(int sock, UdpContext* udp)
 {
+    if (!udps)
+        udps = new std::map<int, UdpContext*>;
     if (udp)
-        udps[sock] = udp;
+        (*udps)[sock] = udp;
     else
-        udps.erase(sock);
+        udps->erase(sock);
 }
 
 void check_incoming_udp()
 {
     // check incoming udp
-    for (auto& udp : udps)
+    if (!udps)
+        return;
+    for (auto& udp : *udps)
     {
         pollfd p;
         p.fd     = udp.first;
