@@ -37,7 +37,11 @@ extern "C" void __cxa_deleted_virtual(void) __attribute__ ((__noreturn__));
 
 void* operator new(size_t size)
 {
+#ifdef DEBUG_ESP_OOM
+    void *ret = malloc_caller(size, __builtin_return_address(0));
+#else
     void *ret = malloc(size);
+#endif
     if (0 != size && 0 == ret) {
         umm_last_fail_alloc_addr = __builtin_return_address(0);
         umm_last_fail_alloc_size = size;
@@ -48,7 +52,11 @@ void* operator new(size_t size)
 
 void* operator new[](size_t size)
 {
+#ifdef DEBUG_ESP_OOM
+    void *ret = malloc_caller(size, __builtin_return_address(0));
+#else
     void *ret = malloc(size);
+#endif
     if (0 != size && 0 == ret) {
         umm_last_fail_alloc_addr = __builtin_return_address(0);
         umm_last_fail_alloc_size = size;
@@ -59,7 +67,11 @@ void* operator new[](size_t size)
 
 void* operator new (size_t size, const std::nothrow_t&)
 {
+#ifdef DEBUG_ESP_OOM
+    void *ret = malloc_caller(size, __builtin_return_address(0));
+#else
     void *ret = malloc(size);
+#endif
     if (0 != size && 0 == ret) {
         umm_last_fail_alloc_addr = __builtin_return_address(0);
         umm_last_fail_alloc_size = size;
@@ -69,7 +81,11 @@ void* operator new (size_t size, const std::nothrow_t&)
 
 void* operator new[] (size_t size, const std::nothrow_t&)
 {
+#ifdef DEBUG_ESP_OOM
+    void *ret = malloc_caller(size, __builtin_return_address(0));
+#else
     void *ret = malloc(size);
+#endif
     if (0 != size && 0 == ret) {
         umm_last_fail_alloc_addr = __builtin_return_address(0);
         umm_last_fail_alloc_size = size;
