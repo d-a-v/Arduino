@@ -175,8 +175,15 @@ void* _calloc_r(struct _reent* unused, size_t count, size_t size)
 
 #define DEBUG_HEAP_PRINTF ets_uart_printf
 
-#define MALLOC_FREQ_SIZE 16
-#define MALLOC_LIST_SIZE 16
+struct malloc_stat_info_s
+{
+    const void* allocer;
+};
+
+#define MALLOC_STAT_INC sizeof(malloc_stat_info_s)
+
+#define MALLOC_STAT_SIZE 64
+#define MALLOC_LIST_SIZE 32
 
 struct malloc_list_s
 {
@@ -189,14 +196,14 @@ struct malloc_stat_s
 {
     unsigned epoch { 0 };
     unsigned count { 0 };
-    const void* caller { nullptr };
-    const void* freeer { nullptr }; // list of free-ers ?
+    const void* allocer { nullptr };
+    //const void* freeer { nullptr }; // list of free-ers ?
     const char* message { nullptr };
     int line { -1 };
     malloc_list_s list;
 };
 
-static malloc_stat_s malloc_stat_list [MALLOC_FREQ_SIZE];
+static malloc_stat_s malloc_stat_list [MALLOC_STAT_SIZE];
 static malloc_stat_s* malloc_stat_last = nullptr;
 static unsigned malloc_stat_epoch = 0;
 static unsigned malloc_stat_overflow = 0;
@@ -204,17 +211,15 @@ static unsigned malloc_lost_alloc = 0;
 static unsigned malloc_lost_free = 0;
 static unsigned malloc_list_full = 0;
 
-void IRAM_ATTR malloc_stat_print (malloc_stat_s* f, int size)
+void IRAM_ATTR malloc_stat_print (const char* head, malloc_stat_s* f, int size)
 {
-    if (size < 0)
-        DEBUG_HEAP_PRINTF("| ");
-    DEBUG_HEAP_PRINTF("alloc-stat: epoch=%u (count = alloc@%p - free@%p =) %u +sum=%u", f->epoch, f->caller, f->freeer, f->count, f->list.sum);
+    DEBUG_HEAP_PRINTF("%salloc-stat: epoch=%u (count = alloc@%p - free =) %u +sum=%u", head, f->epoch, f->allocer, f->count, f->list.sum);
     if (size > 0)
         DEBUG_HEAP_PRINTF(" sz=%d", size);
     if (f->message)
     {
-        char mr [256];
-        strncpy_P(mr, f->message, 256);
+        char mr [strlen_P(f->message) + 1];
+        strcpy_P(mr, f->message);
         DEBUG_HEAP_PRINTF(" (%s:%d)", mr, f->line);
     }
     DEBUG_HEAP_PRINTF("\n");
@@ -224,51 +229,82 @@ void IRAM_ATTR malloc_stat_print_all ()
 {
     DEBUG_HEAP_PRINTF("/======================\n");
     for (malloc_stat_s* f = malloc_stat_list; f <= malloc_stat_last; f++)
-        malloc_stat_print(f, -1);
+        malloc_stat_print("| ", f, -1);
     DEBUG_HEAP_PRINTF("`====================== (overflow=%u - lost-alloc=%u - lost-free=%u - alloc-full=%u)\n", malloc_stat_overflow, malloc_lost_alloc, malloc_lost_free, malloc_list_full);
 }
 
-void IRAM_ATTR malloc_stat (const void* c, const void* p, const size_t z, const char* m, const int l)
-{   
-    if (!c)
+void IRAM_ATTR malloc_stat (bool allocing, const void* caller, const void* ptr, const size_t sz, const char* m, const int l)
+{
+    if (!ptr || (allocing && (!caller || !sz)))
         return;
-    bool done = false;
+
+    //const void* freeer = nullptr;
+    const void* allocer;
+
+    if (allocing)
+    {
+        allocer = caller;
+        ((malloc_stat_info_s*)ptr)->allocer = caller;
+    }
+    else
+    {
+        allocer = ((malloc_stat_info_s*)ptr)->allocer;
+        //freeer = caller;
+    }
+
     malloc_stat_epoch++;
+    bool done = false;
     for (malloc_stat_s* f = malloc_stat_list; f <= malloc_stat_last; f++)
     {
-        bool found = (z && (c == f->caller)) || (!z && (c == f->freeer));
+        bool found = (allocer == f->allocer);// || (!allocing && (freeer == f->freeer));
 
+//if (found && !allocing) DEBUG_HEAP_PRINTF(":");
+//if (!allocing) DEBUG_HEAP_PRINTF("-%p\n", allocer);
+
+#if 0
         for (const void** a = f->list.allocated; !found && a <= f->list.last; a++)
             if (p == *a)
             {
+#if 0
+                // remove inconsistencies?
+                *a = *f->list.last;
+                if (f->list.last == f->list.allocated)
+                    f->list.last = nullptr;
+                else
+                    --(f->list.last);
+                break;
+#else
                 found = true;
-                if (z)
+                if (allocing)
                 {
-                    f->caller = c;
-                    DEBUG_HEAP_PRINTF("malloc found after free? (code=%p addr=%p)\n", c, p);
+                    DEBUG_HEAP_PRINTF("malloc found after free? (code=%p addr=%p), was:\n", c, p);
+                    malloc_stat_print("[[[", f, z);
+                    f->allocer = c;
                     malloc_lost_alloc++;
                 }
-                else if (f->caller && !f->freeer)
+                else if (f->allocer && !f->freeer)
                     f->freeer = c;
+#endif
             }
+#endif
 
         if (found)
         {
             f->epoch = malloc_stat_epoch;
 
-            if (z)
+            if (allocing)
             {
                 f->count++;
                 f->message = m;
                 f->line = l;
-                f->list.sum += z;
+                f->list.sum += sz;
                 if (f->list.last < f->list.allocated + MALLOC_LIST_SIZE - 1)
-                    *++f->list.last = p;
+                    *++f->list.last = ptr;
                 else
                 {
                     static unsigned tooverbose = 0;
                     if (++tooverbose < 10)
-                        DEBUG_HEAP_PRINTF("(malloc list overload " STR(MALLOC_LIST_SIZE) " - caller=%p)\n", c);
+                        DEBUG_HEAP_PRINTF("(malloc list overload " STR(MALLOC_LIST_SIZE) " - allocer=%p)\n", caller);
                     malloc_list_full++;
                 }
 
@@ -294,7 +330,7 @@ void IRAM_ATTR malloc_stat (const void* c, const void* p, const size_t z, const 
                 f->count--;
                 if (f->count == 0)
                 {
-                    // remove caller entry
+                    // remove allocer entry
                     // (always true:) if (malloc_stat_last)
                     {
                         if (malloc_stat_last != f)
@@ -307,9 +343,9 @@ void IRAM_ATTR malloc_stat (const void* c, const void* p, const size_t z, const 
                 }
                 else
                 {
-                    // remove allocated address in caller's list
+                    // remove allocated address in allocer's list
                     for (const void** a = f->list.allocated; a < f->list.last; a++)
-                        if (*a == p)
+                        if (*a == ptr)
                         {
                             if (f->list.last == f->list.allocated)
                             {
@@ -350,11 +386,11 @@ void IRAM_ATTR malloc_stat (const void* c, const void* p, const size_t z, const 
     {
         // entry is not found, inserting
 
-        if (z)
+        if (allocing)
         {
-            if (/*!malloc_stat_last ||*/ malloc_stat_last < malloc_stat_list + MALLOC_FREQ_SIZE - 1)
+            if (/*!malloc_stat_last ||*/ malloc_stat_last < malloc_stat_list + MALLOC_STAT_SIZE - 1)
             {
-                // new caller address
+                // new allocer address
                 if (malloc_stat_last)
                     malloc_stat_last++;
                 else
@@ -363,22 +399,22 @@ void IRAM_ATTR malloc_stat (const void* c, const void* p, const size_t z, const 
                 {
                     .epoch = malloc_stat_epoch,
                     .count = 1,
-                    .caller = c,
-                    .freeer = nullptr,
+                    .allocer = allocer,
+                    //.freeer = nullptr,
                     .message = m,
                     .line = l,
-                    .list = 
+                    .list =
                     {
-                        .allocated = { [0] = p },
+                        .allocated = { [0] = ptr },
                         .last = malloc_stat_last->list.allocated,
-                        .sum = z
-                    } 
+                        .sum = sz
+                    }
                 };
             }
             else
             {
                 // would replace an older entry instead, but which one ?
-                DEBUG_HEAP_PRINTF("(malloc places overload " STR(MALLOC_FREQ_SIZE) " - caller=%p)\n", c);
+                DEBUG_HEAP_PRINTF("(malloc stats overload " STR(MALLOC_STAT_SIZE) " - allocer=%p)\n", allocer);
                 malloc_stat_overflow++;
             }
         }
@@ -386,7 +422,7 @@ void IRAM_ATTR malloc_stat (const void* c, const void* p, const size_t z, const 
         {
             static unsigned tooverbose = 0;
             if (++tooverbose < 10)
-                DEBUG_HEAP_PRINTF("orphaned free? caller=%p addr=%p\n", c, p);
+                DEBUG_HEAP_PRINTF("orphaned free? allocer=%p addr=%p\n", allocer, ptr);
             malloc_lost_free++;
         }
     }
@@ -443,6 +479,8 @@ void IRAM_ATTR print_oom_size(size_t size)
 #endif
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+#define VOID_PLUS(p, i) ((void*)(((long)(p)) + i))
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #if defined(DEBUG_ESP_OOM) || defined(UMM_POISON_CHECK) || defined(UMM_POISON_CHECK_LITE) || defined(UMM_INTEGRITY_CHECK)
 /*
@@ -465,17 +503,19 @@ void IRAM_ATTR print_oom_size(size_t size)
 */
 void* IRAM_ATTR malloc(size_t size)
 {
+    size += MALLOC_STAT_INC;
     INTEGRITY_CHECK__ABORT();
     POISON_CHECK__ABORT();
     void* ret = UMM_MALLOC(size);
     PTR_CHECK__LOG_LAST_FAIL(ret, size);
     OOM_CHECK__PRINT_OOM(ret, size);
-    malloc_stat(__builtin_return_address(0), ret, size, nullptr, 0);
-    return ret;
+    malloc_stat(true, __builtin_return_address(0), ret, size, nullptr, 0);
+    return ret? VOID_PLUS(ret, MALLOC_STAT_INC): nullptr;
 }
 
 void* IRAM_ATTR calloc(size_t count, size_t size)
 {
+    size += MALLOC_STAT_INC;
     INTEGRITY_CHECK__ABORT();
     POISON_CHECK__ABORT();
     void* ret = UMM_CALLOC(count, size);
@@ -484,12 +524,13 @@ void* IRAM_ATTR calloc(size_t count, size_t size)
     #endif
     PTR_CHECK__LOG_LAST_FAIL(ret, total_size);
     OOM_CHECK__PRINT_OOM(ret, total_size);
-    malloc_stat(__builtin_return_address(0), ret, size, nullptr, 0);
-    return ret;
+    malloc_stat(true, __builtin_return_address(0), ret, size, nullptr, 0);
+    return ret? VOID_PLUS(ret, MALLOC_STAT_INC): nullptr;
 }
 
 void* IRAM_ATTR realloc(void* ptr, size_t size)
 {
+    size += MALLOC_STAT_INC;
     INTEGRITY_CHECK__ABORT();
     void* ret = UMM_REALLOC_FL(ptr, size, NULL, 0);
     POISON_CHECK__ABORT();
@@ -497,17 +538,17 @@ void* IRAM_ATTR realloc(void* ptr, size_t size)
     OOM_CHECK__PRINT_OOM(ret, size);
     if (ret)
     {
-        malloc_stat(__builtin_return_address(0), ret, 0, nullptr, 0);
-        malloc_stat(__builtin_return_address(0), ret, size, nullptr, 0);
+        malloc_stat(false, __builtin_return_address(0), ptr, 0, nullptr, 0);
+        malloc_stat(true, __builtin_return_address(0), ret, size, nullptr, 0);
     }
-    return ret;
+    return ret? VOID_PLUS(ret, MALLOC_STAT_INC): nullptr;
 }
 
 void IRAM_ATTR free(void* p)
 {
     INTEGRITY_CHECK__ABORT();
-    malloc_stat(__builtin_return_address(0), p, 0, nullptr, 0);
-    UMM_FREE_FL(p, NULL, 0);
+    malloc_stat(false, __builtin_return_address(0), VOID_PLUS(p, -MALLOC_STAT_INC), 0, nullptr, 0);
+    UMM_FREE_FL(VOID_PLUS(p, -MALLOC_STAT_INC), NULL, 0);
     POISON_CHECK__ABORT();
 }
 #endif
@@ -516,18 +557,20 @@ void IRAM_ATTR free(void* p)
 STATIC_ALWAYS_INLINE
 void* IRAM_ATTR heap_pvPortMalloc(size_t size, const char* file, int line, void* caller)
 {
+    size += MALLOC_STAT_INC;
     INTEGRITY_CHECK__PANIC_FL(file, line);
     POISON_CHECK__PANIC_FL(file, line);
     void* ret = UMM_MALLOC(size);
     PTR_CHECK__LOG_LAST_FAIL_FL(ret, size, file, line);
     OOM_CHECK__PRINT_LOC(ret, size, file, line);
-    malloc_stat(caller?:__builtin_return_address(0), ret, size, file, line);
-    return ret;
+    malloc_stat(true, caller?:__builtin_return_address(0), ret, size, file, line);
+    return ret? VOID_PLUS(ret, MALLOC_STAT_INC): nullptr;
 }
 
 STATIC_ALWAYS_INLINE
 void* IRAM_ATTR heap_pvPortCalloc(size_t count, size_t size, const char* file, int line, void* caller)
 {
+    size += MALLOC_STAT_INC;
     INTEGRITY_CHECK__PANIC_FL(file, line);
     POISON_CHECK__PANIC_FL(file, line);
     void* ret = UMM_CALLOC(count, size);
@@ -536,13 +579,14 @@ void* IRAM_ATTR heap_pvPortCalloc(size_t count, size_t size, const char* file, i
     #endif
     PTR_CHECK__LOG_LAST_FAIL_FL(ret, total_size, file, line);
     OOM_CHECK__PRINT_LOC(ret, total_size, file, line);
-    malloc_stat(caller?:__builtin_return_address(0), ret, size, file, line);
-    return ret;
+    malloc_stat(true, caller?:__builtin_return_address(0), ret, size, file, line);
+    return ret? VOID_PLUS(ret, MALLOC_STAT_INC): nullptr;
 }
 
 STATIC_ALWAYS_INLINE
 void* IRAM_ATTR heap_pvPortRealloc(void *ptr, size_t size, const char* file, int line, void* caller)
 {
+    size += MALLOC_STAT_INC;
     INTEGRITY_CHECK__PANIC_FL(file, line);
     void* ret = UMM_REALLOC_FL(ptr, size, file, line);
     POISON_CHECK__PANIC_FL(file, line);
@@ -550,30 +594,31 @@ void* IRAM_ATTR heap_pvPortRealloc(void *ptr, size_t size, const char* file, int
     OOM_CHECK__PRINT_LOC(ret, size, file, line);
     if (ret)
     {
-        malloc_stat(caller?:__builtin_return_address(0), 0, size, file, line);
-        malloc_stat(caller?:__builtin_return_address(0), ret, size, file, line);
+        malloc_stat(false, caller?:__builtin_return_address(0), ptr, 0, file, line);
+        malloc_stat(true, caller?:__builtin_return_address(0), ret, size, file, line);
     }
-    return ret;
+    return ret? VOID_PLUS(ret, MALLOC_STAT_INC): nullptr;
 }
 
 STATIC_ALWAYS_INLINE
 void* IRAM_ATTR heap_pvPortZalloc(size_t size, const char* file, int line, void* caller)
 {
+    size += MALLOC_STAT_INC;
     INTEGRITY_CHECK__PANIC_FL(file, line);
     POISON_CHECK__PANIC_FL(file, line);
     void* ret = UMM_CALLOC(1, size);
     PTR_CHECK__LOG_LAST_FAIL_FL(ret, size, file, line);
     OOM_CHECK__PRINT_LOC(ret, size, file, line);
-    malloc_stat(caller?:__builtin_return_address(0), ret, size, file, line);
-    return ret;
+    malloc_stat(true, caller?:__builtin_return_address(0), ret, size, file, line);
+    return ret? VOID_PLUS(ret, MALLOC_STAT_INC): nullptr;
 }
 
 STATIC_ALWAYS_INLINE
 void IRAM_ATTR heap_vPortFree(void *ptr, const char* file, int line, void* caller)
 {
     INTEGRITY_CHECK__PANIC_FL(file, line);
-    malloc_stat(caller?:__builtin_return_address(0), ptr, 0, file, line);
-    UMM_FREE_FL(ptr, file, line);
+    malloc_stat(false, caller?:__builtin_return_address(0), VOID_PLUS(ptr, -MALLOC_STAT_INC), 0, file, line);
+    UMM_FREE_FL(VOID_PLUS(ptr, -MALLOC_STAT_INC), file, line);
     POISON_CHECK__PANIC_FL(file, line);
 }
 
