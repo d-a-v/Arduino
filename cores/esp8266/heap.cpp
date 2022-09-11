@@ -183,45 +183,32 @@ struct malloc_stat_info_s
 #define MALLOC_STAT_INC sizeof(malloc_stat_info_s)
 
 #define MALLOC_STAT_SIZE 64
-#define MALLOC_LIST_SIZE 32
-
-struct malloc_list_s
-{
-    const void* allocated [MALLOC_LIST_SIZE] { nullptr };
-    const void** last { nullptr };
-    unsigned sum { 0 };
-};
 
 struct malloc_stat_s
 {
     unsigned epoch { 0 };
     unsigned count { 0 };
     const void* allocer { nullptr };
-    //const void* freeer { nullptr }; // list of free-ers ?
-    const char* message { nullptr };
+    unsigned sum { 0 };
+    const char* file { nullptr };
     int line { -1 };
-    malloc_list_s list;
 };
 
 static malloc_stat_s malloc_stat_list [MALLOC_STAT_SIZE];
 static malloc_stat_s* malloc_stat_last = nullptr;
 static unsigned malloc_stat_epoch = 0;
 static unsigned malloc_stat_overflow = 0;
-static unsigned malloc_lost_alloc = 0;
 static unsigned malloc_lost_free = 0;
-static unsigned malloc_list_full = 0;
+
+void IRAM_ATTR print_file_line(const char* file, int line);
 
 void IRAM_ATTR malloc_stat_print (const char* head, malloc_stat_s* f, int size)
 {
-    DEBUG_HEAP_PRINTF("%salloc-stat: epoch=%u (count = alloc@%p - free =) %u +sum=%u", head, f->epoch, f->allocer, f->count, f->list.sum);
+    DEBUG_HEAP_PRINTF("%salloc-stat: epoch=%u (count = alloc@%p - free =) %u +sum=%u ", head, f->epoch, f->allocer, f->count, f->sum);
     if (size > 0)
-        DEBUG_HEAP_PRINTF(" sz=%d", size);
-    if (f->message)
-    {
-        char mr [strlen_P(f->message) + 1];
-        strcpy_P(mr, f->message);
-        DEBUG_HEAP_PRINTF(" (%s:%d)", mr, f->line);
-    }
+        DEBUG_HEAP_PRINTF("sz=%d ", size);
+    if (f->file)
+        print_file_line(f->file, f->line);
     DEBUG_HEAP_PRINTF("\n");
 }
 
@@ -230,7 +217,7 @@ void IRAM_ATTR malloc_stat_print_all ()
     DEBUG_HEAP_PRINTF("/======================\n");
     for (malloc_stat_s* f = malloc_stat_list; f <= malloc_stat_last; f++)
         malloc_stat_print("| ", f, -1);
-    DEBUG_HEAP_PRINTF("`====================== (overflow=%u - lost-alloc=%u - lost-free=%u - alloc-full=%u)\n", malloc_stat_overflow, malloc_lost_alloc, malloc_lost_free, malloc_list_full);
+    DEBUG_HEAP_PRINTF("`====================== (overflow=%u - lost-free=%u)\n", malloc_stat_overflow, malloc_lost_free);
 }
 
 void IRAM_ATTR malloc_stat (bool allocing, const void* caller, const void* ptr, const size_t sz, const char* m, const int l)
@@ -238,7 +225,6 @@ void IRAM_ATTR malloc_stat (bool allocing, const void* caller, const void* ptr, 
     if (!ptr || (allocing && (!caller || !sz)))
         return;
 
-    //const void* freeer = nullptr;
     const void* allocer;
 
     if (allocing)
@@ -249,44 +235,13 @@ void IRAM_ATTR malloc_stat (bool allocing, const void* caller, const void* ptr, 
     else
     {
         allocer = ((malloc_stat_info_s*)ptr)->allocer;
-        //freeer = caller;
     }
 
     malloc_stat_epoch++;
     bool done = false;
     for (malloc_stat_s* f = malloc_stat_list; f <= malloc_stat_last; f++)
     {
-        bool found = (allocer == f->allocer);// || (!allocing && (freeer == f->freeer));
-
-//if (found && !allocing) DEBUG_HEAP_PRINTF(":");
-//if (!allocing) DEBUG_HEAP_PRINTF("-%p\n", allocer);
-
-#if 0
-        for (const void** a = f->list.allocated; !found && a <= f->list.last; a++)
-            if (p == *a)
-            {
-#if 0
-                // remove inconsistencies?
-                *a = *f->list.last;
-                if (f->list.last == f->list.allocated)
-                    f->list.last = nullptr;
-                else
-                    --(f->list.last);
-                break;
-#else
-                found = true;
-                if (allocing)
-                {
-                    DEBUG_HEAP_PRINTF("malloc found after free? (code=%p addr=%p), was:\n", c, p);
-                    malloc_stat_print("[[[", f, z);
-                    f->allocer = c;
-                    malloc_lost_alloc++;
-                }
-                else if (f->allocer && !f->freeer)
-                    f->freeer = c;
-#endif
-            }
-#endif
+        bool found = (allocer == f->allocer);
 
         if (found)
         {
@@ -295,18 +250,9 @@ void IRAM_ATTR malloc_stat (bool allocing, const void* caller, const void* ptr, 
             if (allocing)
             {
                 f->count++;
-                f->message = m;
+                f->file = m;
                 f->line = l;
-                f->list.sum += sz;
-                if (f->list.last < f->list.allocated + MALLOC_LIST_SIZE - 1)
-                    *++f->list.last = ptr;
-                else
-                {
-                    static unsigned tooverbose = 0;
-                    if (++tooverbose < 10)
-                        DEBUG_HEAP_PRINTF("(malloc list overload " STR(MALLOC_LIST_SIZE) " - allocer=%p)\n", caller);
-                    malloc_list_full++;
-                }
+                f->sum += sz;
 
                 // bubble sort
                 while (true)
@@ -343,21 +289,6 @@ void IRAM_ATTR malloc_stat (bool allocing, const void* caller, const void* ptr, 
                 }
                 else
                 {
-                    // remove allocated address in allocer's list
-                    for (const void** a = f->list.allocated; a < f->list.last; a++)
-                        if (*a == ptr)
-                        {
-                            if (f->list.last == f->list.allocated)
-                            {
-                                f->list.last = nullptr;
-                            }
-                            else
-                            {
-                                *a = *f->list.last;
-                                f->list.last--;
-                            }
-                        }
-
                     // bubble sort
                     while (true)
                         if (f != malloc_stat_last)
@@ -400,15 +331,9 @@ void IRAM_ATTR malloc_stat (bool allocing, const void* caller, const void* ptr, 
                     .epoch = malloc_stat_epoch,
                     .count = 1,
                     .allocer = allocer,
-                    //.freeer = nullptr,
-                    .message = m,
-                    .line = l,
-                    .list =
-                    {
-                        .allocated = { [0] = ptr },
-                        .last = malloc_stat_last->list.allocated,
-                        .sum = sz
-                    }
+                    .sum = sz,
+                    .file = m,
+                    .line = l
                 };
             }
             else
@@ -428,13 +353,10 @@ void IRAM_ATTR malloc_stat (bool allocing, const void* caller, const void* ptr, 
     }
 }
 
-void IRAM_ATTR print_loc(size_t size, const char* file, int line)
+void IRAM_ATTR print_file_line(const char* file, int line)
 {
-    (void)size;
     (void)line;
     if (system_get_os_print()) {
-        DEBUG_HEAP_PRINTF(":oom(%d)@", (int)size);
-
         bool inISR = ETS_INTR_WITHINISR();
         if (NULL == file || (inISR && (uint32_t)file >= 0x40200000)) {
             DEBUG_HEAP_PRINTF("File: %p", file);
@@ -446,7 +368,17 @@ void IRAM_ATTR print_loc(size_t size, const char* file, int line)
             DEBUG_HEAP_PRINTF(file);
         }
 
-        DEBUG_HEAP_PRINTF(":%d\n", line);
+        DEBUG_HEAP_PRINTF(":%d", line);
+    }
+}
+
+void IRAM_ATTR print_loc(size_t size, const char* file, int line)
+{
+    (void)size;
+    if (system_get_os_print()) {
+        DEBUG_HEAP_PRINTF(":oom(%d)@", (int)size);
+        print_file_line(file, line);
+        DEBUG_HEAP_PRINTF("\n");
     }
 }
 
@@ -455,6 +387,7 @@ void IRAM_ATTR print_oom_size(size_t size)
     (void)size;
     if (system_get_os_print()) {
         DEBUG_HEAP_PRINTF(":oom(%d)@?\n", (int)size);
+        malloc_stat_print_all();
     }
 }
 
