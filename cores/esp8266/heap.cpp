@@ -379,6 +379,7 @@ void IRAM_ATTR print_loc(size_t size, const char* file, int line)
         DEBUG_HEAP_PRINTF(":oom(%d)@", (int)size);
         print_file_line(file, line);
         DEBUG_HEAP_PRINTF("\n");
+        malloc_stat_print_all();
     }
 }
 
@@ -465,7 +466,7 @@ void* IRAM_ATTR realloc(void* ptr, size_t size)
 {
     size += MALLOC_STAT_INC;
     INTEGRITY_CHECK__ABORT();
-    void* ret = UMM_REALLOC_FL(ptr, size, NULL, 0);
+    void* ret = UMM_REALLOC_FL(ptr? VOID_PLUS(ptr, -MALLOC_STAT_INC): nullptr, size, NULL, 0);
     POISON_CHECK__ABORT();
     PTR_CHECK__LOG_LAST_FAIL(ret, size);
     OOM_CHECK__PRINT_OOM(ret, size);
@@ -521,7 +522,7 @@ void* IRAM_ATTR heap_pvPortRealloc(void *ptr, size_t size, const char* file, int
 {
     size += MALLOC_STAT_INC;
     INTEGRITY_CHECK__PANIC_FL(file, line);
-    void* ret = UMM_REALLOC_FL(ptr, size, file, line);
+    void* ret = UMM_REALLOC_FL(ptr? VOID_PLUS(ptr, -MALLOC_STAT_INC): nullptr, size, file, line);
     POISON_CHECK__PANIC_FL(file, line);
     PTR_CHECK__LOG_LAST_FAIL_FL(ret, size, file, line);
     OOM_CHECK__PRINT_LOC(ret, size, file, line);

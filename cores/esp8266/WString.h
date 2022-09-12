@@ -33,6 +33,8 @@
 #include <utility>
 #include <type_traits>
 
+#include <umm_malloc/umm_malloc_cfg.h>
+
 // an abstract class used as a means to proide a unique pointer type
 // but really has no body
 class __FlashStringHelper;
@@ -207,6 +209,8 @@ class String {
         // will be left unchanged (but this isn't signalled in any way)
         template <typename T>
         String &operator +=(const T &rhs) {
+            //concat_internal(rhs MALLOC_CALLER_VALUE);
+///XXXX INTERNAL
             concat(rhs);
             return *this;
         }
@@ -305,6 +309,14 @@ class String {
         float toFloat(void) const;
         double toDouble(void) const;
 
+        // internal wrappers with caller address
+        bool reserve_internal(unsigned int size MALLOC_CALLER_ARG_DECL) __attribute__((warn_unused_result));
+        void replace_internal(const String &find, const String &replace MALLOC_CALLER_ARG_DECL);
+        bool concat_internal(const String &s MALLOC_CALLER_ARG_DECL);
+        bool concat_internal(const char *cstr, unsigned int length MALLOC_CALLER_ARG_DECL);
+        String &copy_internal(const char *cstr, unsigned int length MALLOC_CALLER_ARG_DECL);
+        String &copy_internal(const __FlashStringHelper *pstr, unsigned int length MALLOC_CALLER_ARG_DECL);
+
     protected:
         // Contains the string info when we're not in SSO mode
         struct _ptr {
@@ -373,7 +385,7 @@ class String {
 
         // resets the string storage to the initial state
         void invalidate(void);
-        bool changeBuffer(unsigned int maxStrLen);
+        bool changeBuffer(unsigned int maxStrLen MALLOC_CALLER_ARG_DECL);
 
         // copy or insert at a specific position
         String &copy(const char *cstr, unsigned int length);
@@ -387,20 +399,22 @@ class String {
 
         // rvalue helper
         void move(String &rhs) noexcept;
+
 };
 
 // concatenation (note that it's done using non-method operators to handle both possible type refs)
 
 inline String operator +(const String &lhs, const String &rhs) {
     String res;
-    res.reserve(lhs.length() + rhs.length());
-    res += lhs;
-    res += rhs;
+    if (res.reserve_internal(lhs.length() + rhs.length() MALLOC_CALLER_VALUE)) {
+        res.concat_internal(lhs MALLOC_CALLER_VALUE);
+        res.concat_internal(rhs MALLOC_CALLER_VALUE);
+    }
     return res;
 }
 
 inline String operator +(String &&lhs, const String &rhs) {
-    lhs += rhs;
+    lhs.concat_internal(rhs MALLOC_CALLER_VALUE);
     return std::move(lhs);
 }
 

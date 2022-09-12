@@ -122,7 +122,7 @@ static String toString(float value, unsigned char decimalPlaces) {
 String::String(const char *cstr) {
     init();
     if (cstr)
-        copy(cstr, strlen_P(cstr));
+        copy_internal(cstr, strlen_P(cstr) MALLOC_CALLER_VALUE);
 }
 
 String::String(const String &value) {
@@ -187,9 +187,13 @@ void String::invalidate(void) {
 }
 
 bool String::reserve(unsigned int size) {
+    return reserve_internal(size MALLOC_CALLER_VALUE);
+}
+
+bool String::reserve_internal(unsigned int size MALLOC_CALLER_ARG_DECL) {
     if (buffer() && capacity() >= size)
         return true;
-    if (changeBuffer(size)) {
+    if (changeBuffer(size MALLOC_CALLER_ARG_OPT)) {
         if (len() == 0)
             wbuffer()[0] = 0;
         return true;
@@ -197,7 +201,7 @@ bool String::reserve(unsigned int size) {
     return false;
 }
 
-bool String::changeBuffer(unsigned int maxStrLen) {
+bool String::changeBuffer(unsigned int maxStrLen MALLOC_CALLER_ARG_DECL) {
     // Can we use SSO here to avoid allocation?
     if (maxStrLen < sizeof(sso.buff) - 1) {
         if (isSSO() || !buffer()) {
@@ -231,7 +235,7 @@ bool String::changeBuffer(unsigned int maxStrLen) {
         return false;
     }
     uint16_t oldLen = len();
-    char *newbuffer = (char *)realloc(isSSO() ? nullptr : wbuffer(), newSize);
+    char *newbuffer = (char *)realloc_caller(isSSO() ? nullptr : wbuffer(), newSize, MALLOC_CALLER_ARG);
     if (newbuffer) {
         size_t oldSize = capacity() + 1; // include NULL.
         if (isSSO()) {
@@ -255,7 +259,16 @@ bool String::changeBuffer(unsigned int maxStrLen) {
 /*********************************************/
 
 String &String::copy(const char *cstr, unsigned int length) {
-    if (!reserve(length)) {
+    return copy_internal(cstr, length MALLOC_CALLER_VALUE);
+}
+
+String &String::copy(const __FlashStringHelper *pstr, unsigned int length) {
+    return copy_internal(pstr, length MALLOC_CALLER_VALUE);
+}
+
+
+String &String::copy_internal(const char *cstr, unsigned int length MALLOC_CALLER_ARG_DECL) {
+    if (!reserve_internal(length MALLOC_CALLER_ARG_OPT)) {
         invalidate();
         return *this;
     }
@@ -265,8 +278,8 @@ String &String::copy(const char *cstr, unsigned int length) {
     return *this;
 }
 
-String &String::copy(const __FlashStringHelper *pstr, unsigned int length) {
-    if (!reserve(length)) {
+String &String::copy_internal(const __FlashStringHelper *pstr, unsigned int length MALLOC_CALLER_ARG_DECL) {
+    if (!reserve_internal(length MALLOC_CALLER_ARG_OPT)) {
         invalidate();
         return *this;
     }
@@ -286,7 +299,7 @@ String &String::operator =(const String &rhs) {
     if (this == &rhs)
         return *this;
     if (rhs.buffer())
-        copy(rhs.buffer(), rhs.len());
+        copy_internal(rhs.buffer(), rhs.len() MALLOC_CALLER_VALUE);
     else
         invalidate();
     return *this;
@@ -300,7 +313,7 @@ String &String::operator =(String &&rval) noexcept {
 
 String &String::operator =(const char *cstr) {
     if (cstr)
-        copy(cstr, strlen(cstr));
+        copy_internal(cstr, strlen(cstr) MALLOC_CALLER_VALUE);
     else
         invalidate();
     return *this;
@@ -308,7 +321,7 @@ String &String::operator =(const char *cstr) {
 
 String &String::operator =(const __FlashStringHelper *pstr) {
     if (pstr)
-        copy(pstr, strlen_P((PGM_P)pstr));
+        copy_internal(pstr, strlen_P((PGM_P)pstr) MALLOC_CALLER_VALUE);
     else
         invalidate();
     return *this;
@@ -324,7 +337,7 @@ String &String::operator =(char c) {
 /*  concat                                   */
 /*********************************************/
 
-bool String::concat(const String &s) {
+bool String::concat_internal(const String &s MALLOC_CALLER_ARG_DECL) {
     // Special case if we're concatting ourself (s += s;) since we may end up
     // realloc'ing the buffer and moving s.buffer in the method called
     if (&s == this) {
@@ -333,24 +346,24 @@ bool String::concat(const String &s) {
             return false;
         if (s.len() == 0)
             return true;
-        if (!reserve(newlen))
+        if (!reserve_internal(newlen MALLOC_CALLER_ARG_OPT))
             return false;
         memmove_P(wbuffer() + len(), buffer(), len());
         setLen(newlen);
         wbuffer()[newlen] = 0;
         return true;
     } else {
-        return concat(s.buffer(), s.len());
+        return concat_internal(s.buffer(), s.len() MALLOC_CALLER_ARG_OPT);
     }
 }
 
-bool String::concat(const char *cstr, unsigned int length) {
+bool String::concat_internal(const char *cstr, unsigned int length MALLOC_CALLER_ARG_DECL) {
     unsigned int newlen = len() + length;
     if (!cstr)
         return false;
     if (length == 0)
         return true;
-    if (!reserve(newlen))
+    if (!reserve_internal(newlen MALLOC_CALLER_ARG_OPT))
         return false;
     memmove_P(wbuffer() + len(), cstr, length);
     setLen(newlen);
@@ -358,65 +371,65 @@ bool String::concat(const char *cstr, unsigned int length) {
     return true;
 }
 
+bool String::concat(const String &s) {
+    return concat_internal(s MALLOC_CALLER_VALUE);
+}
+
+bool String::concat(const char *cstr, unsigned int length) {
+    return concat_internal(cstr, length MALLOC_CALLER_VALUE);
+}
+
 bool String::concat(const char *cstr) {
     if (!cstr)
         return false;
-    return concat(cstr, strlen(cstr));
+concat_internal("!", 1 MALLOC_CALLER_VALUE);
+    return concat_internal(cstr, strlen(cstr) MALLOC_CALLER_VALUE);
 }
 
 bool String::concat(char c) {
-    return concat(&c, 1);
+    return concat_internal(&c, 1 MALLOC_CALLER_VALUE);
 }
 
 bool String::concat(unsigned char num) {
-    return concat(String(num));
+    return concat_internal(String(num) MALLOC_CALLER_VALUE);
 }
 
 bool String::concat(int num) {
-    return concat(String(num));
+    return concat_internal(String(num) MALLOC_CALLER_VALUE);
 }
 
 bool String::concat(unsigned int num) {
-    return concat(String(num));
+    return concat_internal(String(num) MALLOC_CALLER_VALUE);
 }
 
 bool String::concat(long num) {
-    return concat(String(num));
+    return concat_internal(String(num) MALLOC_CALLER_VALUE);
 }
 
 bool String::concat(unsigned long num) {
-    return concat(String(num));
+    return concat_internal(String(num) MALLOC_CALLER_VALUE);
 }
 
 bool String::concat(long long num) {
-    return concat(String(num));
+    return concat_internal(String(num) MALLOC_CALLER_VALUE);
 }
 
 bool String::concat(unsigned long long num) {
-    return concat(String(num));
+    return concat_internal(String(num) MALLOC_CALLER_VALUE);
 }
 
 bool String::concat(float num) {
-    return concat(String(num));
+    return concat_internal(String(num) MALLOC_CALLER_VALUE);
 }
 
 bool String::concat(double num) {
-    return concat(String(num));
+    return concat_internal(String(num) MALLOC_CALLER_VALUE);
 }
 
 bool String::concat(const __FlashStringHelper *str) {
     if (!str)
         return false;
-    int length = strlen_P((PGM_P)str);
-    if (length == 0)
-        return true;
-    unsigned int newlen = len() + length;
-    if (!reserve(newlen))
-        return false;
-    memcpy_P(wbuffer() + len(), (PGM_P)str, length);
-    setLen(newlen);
-    wbuffer()[newlen] = 0;
-    return true;
+    return concat_internal((PGM_P)str, strlen_P((PGM_P)str) MALLOC_CALLER_VALUE);
 }
 
 /*********************************************/
@@ -429,7 +442,7 @@ String &String::insert(size_t position, const char *other, size_t other_length) 
 
     auto len = length();
     auto total = len + other_length;
-    if (!reserve(total))
+    if (!reserve_internal(total MALLOC_CALLER_VALUE))
         return *this;
 
     auto left = len - position;
@@ -468,10 +481,11 @@ String operator +(const String &lhs, String &&rhs) {
         rhs.insert(0, lhs);
         res = std::move(rhs);
     } else {
-        res.reserve(total);
-        res += lhs;
-        res += rhs;
-        rhs.invalidate();
+        if (res.reserve_internal(total MALLOC_CALLER_VALUE)) {
+            res += lhs;
+            res += rhs;
+            rhs.invalidate();
+        } // else return emptyness
     }
 
     return res;
@@ -494,17 +508,19 @@ String operator +(String &&lhs, String &&rhs) {
 
 String operator +(char lhs, const String &rhs) {
     String res;
-    res.reserve(rhs.length() + 1);
-    res += lhs;
-    res += rhs;
+    if (res.reserve_internal(rhs.length() + 1 MALLOC_CALLER_VALUE)) {
+        res += lhs;
+        res += rhs;
+    }
     return res;
 }
 
 String operator +(const char *lhs, const String &rhs) {
     String res;
-    res.reserve(strlen_P(lhs) + rhs.length());
-    res += lhs;
-    res += rhs;
+    if (res.reserve_internal(strlen_P(lhs) + rhs.length() MALLOC_CALLER_VALUE)) {
+        res += lhs;
+        res += rhs;
+    }
     return res;
 }
 
@@ -755,6 +771,7 @@ String String::substring(unsigned int left, unsigned int right) const {
         return out;
     if (right > len())
         right = len();
+///XXXX INTERNAL
     out.concat(buffer() + left, right - left);
     return out;
 }
@@ -773,6 +790,10 @@ void String::replace(char find, char replace) {
 }
 
 void String::replace(const String &find, const String &replace) {
+    return replace_internal(find, replace MALLOC_CALLER_VALUE);
+}
+
+void String::replace_internal(const String &find, const String &replace MALLOC_CALLER_ARG_DECL) {
     if (len() == 0 || find.len() == 0)
         return;
     int diff = replace.len() - find.len();
@@ -803,7 +824,7 @@ void String::replace(const String &find, const String &replace) {
         }
         if (size == len())
             return;
-        if (size > capacity() && !changeBuffer(size))
+        if (size > capacity() && !changeBuffer(size MALLOC_CALLER_ARG_OPT))
             return; // XXX: tell user!
         int index = len() - 1;
         while (index >= 0 && (index = lastIndexOf(find, index)) >= 0) {
@@ -820,19 +841,19 @@ void String::replace(const String &find, const String &replace) {
 
 
 void String::replace(const char *find, const String &replace) {
-    this->replace(String(find), replace);
+    this->replace_internal(String(find), replace MALLOC_CALLER_VALUE);
 }
 void String::replace(const __FlashStringHelper *find, const String &replace) {
-    this->replace(String(find), replace);
+    this->replace_internal(String(find), replace MALLOC_CALLER_VALUE);
 }
 void String::replace(const char *find, const char *replace) {
-    this->replace(String(find), String(replace));
+    this->replace_internal(String(find), String(replace) MALLOC_CALLER_VALUE);
 }
 void String::replace(const __FlashStringHelper *find, const char *replace) {
-    this->replace(String(find), String(replace));
+    this->replace_internal(String(find), String(replace) MALLOC_CALLER_VALUE);
 }
 void String::replace(const __FlashStringHelper *find, const __FlashStringHelper *replace) {
-    this->replace(String(find), String(replace));
+    this->replace_internal(String(find), String(replace) MALLOC_CALLER_VALUE);
 }
 
 

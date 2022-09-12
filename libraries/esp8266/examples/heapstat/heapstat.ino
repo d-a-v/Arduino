@@ -56,11 +56,17 @@ void setup ()
     malloc_stat_print_all();
 }
 
+
+String blah = "x";
+
 void loop ()
 {
+#if 1
+    blah.concat("#######################################################");
+    //Serial.printf("%u\n", blah.length());
+#else
     for (int i = 0; i < 10000; i++)
         delay(1);
     malloc_stat_print_all();
-   
+#endif
 }
-    
