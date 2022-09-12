@@ -122,6 +122,7 @@ class String {
         // is left unchanged).  reserve(0), if successful, will validate an
         // invalid string (i.e., "if (s)" will be true afterwards)
         bool reserve(unsigned int size);
+
         unsigned int length(void) const {
             return buffer() ? len() : 0;
         }
@@ -209,8 +210,6 @@ class String {
         // will be left unchanged (but this isn't signalled in any way)
         template <typename T>
         String &operator +=(const T &rhs) {
-            //concat_internal(rhs MALLOC_CALLER_VALUE);
-///XXXX INTERNAL
             concat(rhs);
             return *this;
         }

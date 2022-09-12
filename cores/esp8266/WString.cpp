@@ -371,8 +371,8 @@ bool String::concat_internal(const char *cstr, unsigned int length MALLOC_CALLER
     return true;
 }
 
-bool String::concat(const String &s) {
-    return concat_internal(s MALLOC_CALLER_VALUE);
+bool String::concat(const String& str) {
+    return concat_internal(str MALLOC_CALLER_VALUE);
 }
 
 bool String::concat(const char *cstr, unsigned int length) {
@@ -382,7 +382,6 @@ bool String::concat(const char *cstr, unsigned int length) {
 bool String::concat(const char *cstr) {
     if (!cstr)
         return false;
-concat_internal("!", 1 MALLOC_CALLER_VALUE);
     return concat_internal(cstr, strlen(cstr) MALLOC_CALLER_VALUE);
 }
 
@@ -485,7 +484,7 @@ String operator +(const String &lhs, String &&rhs) {
             res += lhs;
             res += rhs;
             rhs.invalidate();
-        } // else return emptyness
+        }
     }
 
     return res;
