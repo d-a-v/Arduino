@@ -1,0 +1,62 @@
+#!/bin/sh
+
+###FIXME convert me to python
+
+set -e
+
+dir=$(cd ${0%/*} 2>/dev/null; pwd)
+
+test=tools/xtensa-lx106-elf/bin/xtensa-lx106-elf-readelf
+if [ ! -r ${ESP8266ARDUINO}/${test} ]; then
+    try=${HOME}/.arduino15/packages/esp8266
+    if [ -r ${try}/${test} ]; then
+        export ESP8266ARDUINO=${try}
+    else
+        echo "\${ESP8266ARDUINO}/${test} is not found"
+        echo "ESP8266ARDUINO='${ESP8266ARDUINO}' (also tested with '${try}')"
+        echo "Please check that variable ESP8266ARDUINO is set to an installed esp8266/Arduino tooling environment"
+        exit 1
+    fi
+fi
+
+for tool in \
+        ./idf_monitor.py \
+        idf_monitor_base/ansi_color_converter.py \
+        idf_monitor_base/output_helpers.py \
+        idf_monitor_base/argument_parser.py \
+        idf_monitor_base/constants.py \
+        idf_monitor_base/coredump.py \
+        idf_monitor_base/logger.py \
+        idf_monitor_base/web_socket_client.py \
+        idf_monitor_base/console_parser.py \
+        idf_monitor_base/console_reader.py \
+        idf_monitor_base/stoppable_thread.py \
+        idf_monitor_base/exceptions.py \
+        idf_monitor_base/gdbhelper.py \
+        idf_monitor_base/line_matcher.py \
+        idf_monitor_base/serial_handler.py \
+        idf_monitor_base/chip_specific_config.py \
+        idf_monitor_base/serial_reader.py \
+        ; do
+    file=${tool##*/}
+    parent=${tool%/*}
+    mkdir -p ${dir}/${parent}
+    [ -f ${dir}/${parent}/${file} ] || curl https://raw.githubusercontent.com/espressif/esp-idf/master/tools/${tool} > ${dir}/${parent}/${file}
+done
+
+elf=
+for elftest in "$@"; do
+    if [ "${elftest##*.}" = elf ]; then
+        elf=${elftest}
+    fi
+done
+if [ -z "$elf" ]; then
+    echo "elf file is not found in command line" 1>&2
+    exit 1
+else
+    echo "using elf file '${elf}'" 1>&2
+fi
+
+command="python3 ${dir}/idf_monitor.py --toolchain-prefix $ESP8266ARDUINO/tools/xtensa-lx106-elf/bin/xtensa-lx106-elf-"
+echo "command=${command} $@" 1>&2
+exec $command "$@"
