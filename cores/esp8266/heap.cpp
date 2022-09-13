@@ -187,7 +187,8 @@ struct malloc_stat_info_s
 struct malloc_stat_s
 {
     unsigned epoch { 0 };
-    unsigned count { 0 };
+    unsigned count_alloc { 0 };
+    unsigned count_free { 0 };
     const void* allocer { nullptr };
     unsigned sum { 0 };
     const char* file { nullptr };
@@ -204,7 +205,7 @@ void IRAM_ATTR print_file_line(const char* file, int line);
 
 void IRAM_ATTR malloc_stat_print (const char* head, malloc_stat_s* f, int size)
 {
-    DEBUG_HEAP_PRINTF("%salloc-stat: epoch=%u (count = alloc@%p - free =) %u +sum=%u ", head, f->epoch, f->allocer, f->count, f->sum);
+    DEBUG_HEAP_PRINTF("%salloc-stat: epoch=%u (alloc@%p(%u) - free(%u) =) %u +sum=%u ", head, f->epoch, f->allocer, f->count_alloc, f->count_free, f->count_alloc - f->count_free, f->sum);
     if (size > 0)
         DEBUG_HEAP_PRINTF("sz=%d ", size);
     if (f->file)
@@ -249,32 +250,31 @@ void IRAM_ATTR malloc_stat (bool allocing, const void* caller, const void* ptr, 
 
             if (allocing)
             {
-                f->count++;
+                f->count_alloc++;
                 f->file = m;
                 f->line = l;
                 f->sum += sz;
 
                 // bubble sort
-                while (true)
-                    if (f != malloc_stat_list)
+                while (f != malloc_stat_list)
+                {
+                    auto prev = f;
+                    prev--;
+                    if (f->count_alloc - f->count_free > prev->count_alloc - prev->count_free)
                     {
-                        auto prev = f;
-                        prev--;
-                        if (f->count > prev->count)
-                        {
-                            malloc_stat_s temp = *f;
-                            *f = *prev;
-                            *prev = temp;
-                        }
+                        malloc_stat_s temp = *f;
+                        *f = *prev;
+                        *prev = temp;
                         f = prev;
                     }
                     else
                         break;
+                }
             }
             else
             {
-                f->count--;
-                if (f->count == 0)
+                f->count_free++;
+                if (f->count_free == f->count_alloc)
                 {
                     // remove allocer entry
                     // (always true:) if (malloc_stat_last)
@@ -290,21 +290,20 @@ void IRAM_ATTR malloc_stat (bool allocing, const void* caller, const void* ptr, 
                 else
                 {
                     // bubble sort
-                    while (true)
-                        if (f != malloc_stat_last)
+                    while (f != malloc_stat_last)
+                    {
+                        auto next = f;
+                        next++;
+                        if (f->count_alloc - f->count_free < next->count_alloc - next->count_free)
                         {
-                            auto next = f;
-                            next++;
-                            if (f->count < next->count)
-                            {
-                                malloc_stat_s temp = *f;
-                                *f = *next;
-                                *next = temp;
-                            }
+                            malloc_stat_s temp = *f;
+                            *f = *next;
+                            *next = temp;
                             f = next;
                         }
                         else
                             break;
+                    }
                 }
             }
 
@@ -329,7 +328,8 @@ void IRAM_ATTR malloc_stat (bool allocing, const void* caller, const void* ptr, 
                 *malloc_stat_last =
                 {
                     .epoch = malloc_stat_epoch,
-                    .count = 1,
+                    .count_alloc = 1,
+                    .count_free = 0,
                     .allocer = allocer,
                     .sum = sz,
                     .file = m,
