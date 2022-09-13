@@ -472,7 +472,7 @@ void* IRAM_ATTR realloc(void* ptr, size_t size)
     OOM_CHECK__PRINT_OOM(ret, size);
     if (ret)
     {
-        malloc_stat(false, __builtin_return_address(0), ptr, 0, nullptr, 0);
+        malloc_stat(false, nullptr, ptr, 0, nullptr, 0);
         malloc_stat(true, __builtin_return_address(0), ret, size, nullptr, 0);
     }
     return ret? VOID_PLUS(ret, MALLOC_STAT_INC): nullptr;
@@ -481,7 +481,7 @@ void* IRAM_ATTR realloc(void* ptr, size_t size)
 void IRAM_ATTR free(void* p)
 {
     INTEGRITY_CHECK__ABORT();
-    malloc_stat(false, __builtin_return_address(0), VOID_PLUS(p, -MALLOC_STAT_INC), 0, nullptr, 0);
+    malloc_stat(false, nullptr, VOID_PLUS(p, -MALLOC_STAT_INC), 0, nullptr, 0);
     UMM_FREE_FL(VOID_PLUS(p, -MALLOC_STAT_INC), NULL, 0);
     POISON_CHECK__ABORT();
 }
@@ -528,7 +528,7 @@ void* IRAM_ATTR heap_pvPortRealloc(void *ptr, size_t size, const char* file, int
     OOM_CHECK__PRINT_LOC(ret, size, file, line);
     if (ret)
     {
-        malloc_stat(false, caller?:__builtin_return_address(0), ptr, 0, file, line);
+        malloc_stat(false, nullptr, ptr, 0, file, line);
         malloc_stat(true, caller?:__builtin_return_address(0), ret, size, file, line);
     }
     return ret? VOID_PLUS(ret, MALLOC_STAT_INC): nullptr;
@@ -548,10 +548,10 @@ void* IRAM_ATTR heap_pvPortZalloc(size_t size, const char* file, int line, void*
 }
 
 STATIC_ALWAYS_INLINE
-void IRAM_ATTR heap_vPortFree(void *ptr, const char* file, int line, void* caller)
+void IRAM_ATTR heap_vPortFree(void *ptr, const char* file, int line)
 {
     INTEGRITY_CHECK__PANIC_FL(file, line);
-    malloc_stat(false, caller?:__builtin_return_address(0), VOID_PLUS(ptr, -MALLOC_STAT_INC), 0, file, line);
+    malloc_stat(false, nullptr, VOID_PLUS(ptr, -MALLOC_STAT_INC), 0, file, line);
     UMM_FREE_FL(VOID_PLUS(ptr, -MALLOC_STAT_INC), file, line);
     POISON_CHECK__PANIC_FL(file, line);
 }
@@ -603,7 +603,7 @@ void IRAM_ATTR vPortFree(void *ptr, const char* file, int line)
     // correct context. umm_malloc free internally determines the correct heap.
     HeapSelectDram ephemeral;
 #endif
-    return heap_vPortFree(ptr,  file, line, __builtin_return_address(0));
+    return heap_vPortFree(ptr,  file, line);
 }
 
 };

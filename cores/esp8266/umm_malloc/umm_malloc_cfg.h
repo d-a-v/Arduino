@@ -767,7 +767,7 @@ void *IRAM_ATTR heap_pvPortMalloc(size_t size, const char *file, int line, void*
 void *IRAM_ATTR heap_pvPortCalloc(size_t count, size_t size, const char *file, int line, void* caller);
 void *IRAM_ATTR heap_pvPortRealloc(void *ptr, size_t size, const char *file, int line, void* caller);
 void *IRAM_ATTR heap_pvPortZalloc(size_t size, const char *file, int line, void* caller);
-void IRAM_ATTR heap_vPortFree(void *ptr, const char *file, int line, void* caller);
+void IRAM_ATTR heap_vPortFree(void *ptr, const char *file, int line);
 
 #define MALLOC_CALLER_ARG_DECL      , void* parent_caller_address
 #define MALLOC_CALLER_ARG           parent_caller_address
@@ -775,13 +775,14 @@ void IRAM_ATTR heap_vPortFree(void *ptr, const char *file, int line, void* calle
 #define MALLOC_CALLER_VALUE         , __builtin_return_address(0)
 
 #define malloc(s) ({ static const char mem_debug_file[] PROGMEM STORE_ATTR = __FILE__; heap_pvPortMalloc(s, mem_debug_file, __LINE__, nullptr); })
-#define malloc_caller(s,c) ({ static const char mem_debug_file[] PROGMEM STORE_ATTR = __FILE__; heap_pvPortMalloc(s, mem_debug_file, __LINE__, c); })
 #define calloc(n,s) ({ static const char mem_debug_file[] PROGMEM STORE_ATTR = __FILE__; heap_pvPortCalloc(n, s, mem_debug_file, __LINE__, nullptr); })
 #define realloc(p,s) ({ static const char mem_debug_file[] PROGMEM STORE_ATTR = __FILE__; heap_pvPortRealloc(p, s, mem_debug_file, __LINE__, nullptr); })
+// same, carrying caller address
+#define malloc_caller(s,c) ({ static const char mem_debug_file[] PROGMEM STORE_ATTR = __FILE__; heap_pvPortMalloc(s, mem_debug_file, __LINE__, c); })
 #define realloc_caller(p,s,c) ({ static const char mem_debug_file[] PROGMEM STORE_ATTR = __FILE__; heap_pvPortRealloc(p, s, mem_debug_file, __LINE__, c); })
 
 #if defined(UMM_POISON_CHECK) || defined(UMM_POISON_CHECK_LITE)
-#define dbg_heap_free(p) ({ static const char mem_debug_file[] PROGMEM STORE_ATTR = __FILE__; heap_vPortFree(p, mem_debug_file, __LINE__, nullptr); })
+#define dbg_heap_free(p) ({ static const char mem_debug_file[] PROGMEM STORE_ATTR = __FILE__; heap_vPortFree(p, mem_debug_file, __LINE__); })
 #else
 #define dbg_heap_free(p) free(p)
 #endif
