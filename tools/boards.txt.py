@@ -1366,6 +1366,7 @@ def all_debug ():
         debugname = ''
         debugmenuname = ''
         debugdefs = ''
+        allow_nooptsiblingcalls = True
         for opt in optlist:
             space = opt.find(" ")
             if space > 0:
@@ -1379,8 +1380,11 @@ def all_debug ():
             debugmenuname += simpleopt
             if opt == 'NoAssert-NDEBUG':
                 debugdefs += ' -DNDEBUG'
+                allow_nooptsiblingcalls = False
             else:
                 debugdefs += ' -DDEBUG_ESP_' + opt
+        if allow_nooptsiblingcalls and debugdefs != '':
+            debugdefs += ' -fno-optimize-sibling-calls'
         debugmenu.update(collections.OrderedDict([
             ( '.menu.lvl.' + debugname, debugmenuname ),
             ( '.menu.lvl.' + debugname + '.build.debug_level', debugdefs )
