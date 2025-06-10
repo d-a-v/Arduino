@@ -355,6 +355,7 @@ OPT_ARDUINO_LIBS ?= \
 	$(addprefix $(abspath ../../libraries)/,\
 		$(addprefix ESP8266WebServer/src/,\
 			detail/mimetable.cpp \
+			detail/etag.cpp \
 		) \
 		$(addprefix ESP8266mDNS/src/,\
 			LEAmDNS.cpp \
